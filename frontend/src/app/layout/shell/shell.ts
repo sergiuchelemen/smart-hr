@@ -30,7 +30,6 @@ export class Shell {
   protected readonly themes: { label: string; value: ThemeChoice }[] = [
     { label: 'Luminos', value: 'light' },
     { label: 'Întunecat', value: 'dark' },
-    { label: 'Sistem', value: 'system' },
   ];
 
   protected setTheme(value: ThemeChoice): void {

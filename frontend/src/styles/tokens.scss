@@ -67,9 +67,3 @@
 [data-theme='dark'] {
   @include dark-tokens;
 }
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    @include dark-tokens;
-  }
-}
