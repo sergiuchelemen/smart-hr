@@ -1,5 +1,9 @@
 package ro.smarthr.employee;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -26,10 +30,19 @@ public class EmployeeController {
     /** Fără companyId: compania vine exclusiv din token. Câmpurile necunoscute sunt ignorate. */
     public record EmployeeRequest(@NotBlank @Size(max = 100) String firstName,
                                   @NotBlank @Size(max = 100) String lastName,
-                                  @Email @Size(max = 254) String workEmail,
+                                  @JsonDeserialize(using = TrimmingDeserializer.class) @Email @Size(max = 254) String workEmail,
                                   @Size(max = 150) String jobTitle,
                                   @Size(max = 150) String department,
                                   @ValidHireDate LocalDate hireDate) {
+    }
+
+    /** Elimină spațiile de la capete înainte de validarea @Email. */
+    static class TrimmingDeserializer extends JsonDeserializer<String> {
+        @Override
+        public String deserialize(JsonParser p, DeserializationContext ctx) throws java.io.IOException {
+            String v = p.getValueAsString();
+            return v == null ? null : v.trim();
+        }
     }
 
     public record EmployeeResponse(UUID id, String firstName, String lastName, String workEmail, String jobTitle,
