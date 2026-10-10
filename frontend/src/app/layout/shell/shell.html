@@ -54,6 +54,21 @@
           <i class="pi pi-users" aria-hidden="true"></i><span>Angajați</span>
         </a>
       </li>
+      <li *appHasPermission="['USER_READ', 'USER_MANAGE', 'ROLE_MANAGE']; mode: 'any'" class="group">
+        <span class="group-label t-label t-muted">Administrare</span>
+        <ul class="menu" aria-label="Administrare">
+          <li *appHasPermission="['USER_READ', 'USER_MANAGE']; mode: 'any'">
+            <a routerLink="/admin/utilizatori" routerLinkActive="active" (click)="drawerOpen.set(false)">
+              <i class="pi pi-user" aria-hidden="true"></i><span>Utilizatori</span>
+            </a>
+          </li>
+          <li *appHasPermission="'ROLE_MANAGE'">
+            <a routerLink="/admin/roluri" routerLinkActive="active" (click)="drawerOpen.set(false)">
+              <i class="pi pi-shield" aria-hidden="true"></i><span>Roluri și privilegii</span>
+            </a>
+          </li>
+        </ul>
+      </li>
     </ul>
   </nav>
 </ng-template>

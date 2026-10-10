@@ -37,6 +37,18 @@ import { HasPermissionDirective } from '../../core/auth/has-permission.directive
           <span class="t-body-sm t-muted">Vezi lista angajaților companiei.</span>
         </a>
       </li>
+      <li *appHasPermission="['USER_READ', 'USER_MANAGE']; mode: 'any'">
+        <a routerLink="/admin/utilizatori" class="card panel">
+          <span class="t-heading">Utilizatori</span>
+          <span class="t-body-sm t-muted">Conturile companiei, rolurile și starea lor.</span>
+        </a>
+      </li>
+      <li *appHasPermission="'ROLE_MANAGE'">
+        <a routerLink="/admin/roluri" class="card panel">
+          <span class="t-heading">Roluri și privilegii</span>
+          <span class="t-body-sm t-muted">Creează roluri și alege privilegiile lor.</span>
+        </a>
+      </li>
     </ul>
     @if (!auth.permissions().length) {
       <p class="panel empty t-muted">Contul tău nu are încă nicio secțiune disponibilă. Cere acces administratorului companiei.</p>

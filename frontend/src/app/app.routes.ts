@@ -44,6 +44,19 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/aprobari/aprobari').then((m) => m.AprobariPage),
       },
       {
+        path: 'admin/utilizatori',
+        canActivate: [permissionGuard],
+        data: { permissions: ['USER_READ', 'USER_MANAGE'], permissionsMode: 'any' },
+        loadComponent: () =>
+          import('./pages/admin/utilizatori/utilizatori').then((m) => m.UtilizatoriPage),
+      },
+      {
+        path: 'admin/roluri',
+        canActivate: [permissionGuard],
+        data: { permissions: ['ROLE_MANAGE'] },
+        loadComponent: () => import('./pages/admin/roluri/roluri').then((m) => m.RoluriPage),
+      },
+      {
         path: 'acces-interzis',
         loadComponent: () =>
           import('./pages/acces-interzis/acces-interzis').then((m) => m.AccesInterzisPage),
