@@ -30,10 +30,15 @@ Pentru `iterația = 1..3`:
 
 Dacă după 3 iterații nu e rezolvat: **NU face push**. Raportează starea (ce trece, ce nu, problemele rămase) și lasă decizia utilizatorului.
 
-## Pasul 3: push (doar la succes)
+## Pasul 3: push (automat, doar la succes)
+Push-ul se face singur, fără să ceri acord, imediat ce Tester = PASS și Reviewer = APPROVED.
 1. Rulează încă o dată build-ul proiectului (comanda din `CLAUDE.md`). Dacă pică, tratează ca eșec.
-2. `git push -u origin <branch-feat>`. Dacă nu există remote `origin`, spune-o și nu încerca alte variante.
-3. **Niciodată**: push pe `main`/`master`, `--force`, deploy, comenzi de infrastructură.
+2. Verifică `git status`: pe branch nu trebuie să rămână fișiere ale muncii tale necomise. Nu comite `.env`, `.docx` sau alte documente personale.
+3. `git push -u origin <branch-feat>`. Dacă push-ul eșuează din cauza autentificării (ex. `could not read Username`, 403), nu încerca alte variante și nu pune tokenuri în comenzi: raportează eroarea și lasă omul să rezolve.
+4. **Niciodată**: push pe `main`/`master`, `--force`, ștergerea de branch-uri, deploy, comenzi de infrastructură.
+5. După push, verifică cu `git ls-remote --heads origin <branch-feat>` că branch-ul e pe GitHub, la același commit ca local.
+
+Pentru munca împărțită în etape, aplică pașii 1-5 la finalul fiecărei etape aprobate, pe branch-ul ei.
 
 ## Pasul 4: raport final
 Un rezumat scurt:
