@@ -86,6 +86,17 @@ public final class Messages {
 
     public static final String DOCUMENT_INVALID_FILE = "Fișier invalid: sunt permise doar PDF și text UTF-8, până la 10 MB.";
 
+    public static final String EVALUATION_STATE_CONFLICT = "Evaluarea sau ciclul nu este în starea necesară pentru această acțiune.";
+
+    public static final String EVALUATION_CYCLE_OPEN_EXISTS = "Există deja un ciclu de evaluare deschis.";
+
+    public static final String EVALUATION_INVALID_CYCLE = "Ciclu invalid: verifică numele, datele și criteriile (suma ponderilor trebuie să fie 100).";
+
+    public static final String EVALUATION_INVALID_SCORES = "Scoruri invalide: sunt necesare numere întregi între 1 și 5 pentru toate criteriile.";
+
+    public static final String EVALUATION_INVALID_COMMENT = "Comentariul poate avea cel mult 1000 de caractere.";
+
+    public static final String EVALUATION_INVALID_REVIEWER = "Evaluator invalid.";
 
     private Messages() {
     }
