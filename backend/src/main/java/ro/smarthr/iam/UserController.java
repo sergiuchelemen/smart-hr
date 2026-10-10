@@ -15,13 +15,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import ro.smarthr.common.MaxUtf8Bytes;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
 
     public record CreateUserRequest(@NotBlank @Email @Size(max = 254) String email,
-                                    @NotBlank @Size(min = 12, max = 72) String password,
+                                    @NotBlank @Size(min = 12) @MaxUtf8Bytes(72) String password,
                                     @NotNull @Size(max = 50) List<@NotNull UUID> roleIds) {
     }
 

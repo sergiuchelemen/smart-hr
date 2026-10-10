@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import ro.smarthr.common.MaxUtf8Bytes;
 
 @RestController
 @RequestMapping("/api/platform/companies")
@@ -25,7 +26,7 @@ public class CompanyController {
         @NotBlank @Size(max = 200) String name,
         @NotBlank @Pattern(regexp = "^[a-z0-9-]{3,32}$") String code,
         @NotBlank @Email @Size(max = 254) String adminEmail,
-        @NotBlank @Size(min = 12, max = 72) String adminPassword) {
+        @NotBlank @Size(min = 12) @MaxUtf8Bytes(72) String adminPassword) {
     }
 
     public record CompanyResponse(UUID id, String name, String code, Instant createdAt) {
