@@ -37,6 +37,12 @@ import { HasPermissionDirective } from '../../core/auth/has-permission.directive
           <span class="t-body-sm t-muted">Vezi lista angajaților companiei.</span>
         </a>
       </li>
+      <li *appHasPermission="['EMPLOYEE_READ', 'ORG_MANAGE']; mode: 'any'">
+        <a routerLink="/organizatie" class="card panel">
+          <span class="t-heading">Structura organizațională</span>
+          <span class="t-body-sm t-muted">Departamentele și posturile companiei.</span>
+        </a>
+      </li>
       <li *appHasPermission="['USER_READ', 'USER_MANAGE']; mode: 'any'">
         <a routerLink="/admin/utilizatori" class="card panel">
           <span class="t-heading">Utilizatori</span>

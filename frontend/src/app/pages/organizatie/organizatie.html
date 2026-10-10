@@ -1,0 +1,167 @@
+<header class="head">
+  <h1 class="t-title" tabindex="-1">Structura organizațională</h1>
+  <p class="t-muted">Departamentele și posturile companiei.</p>
+</header>
+
+<p class="sr-only" aria-live="polite">
+  @if (status() === 'loading') { Se încarcă structura organizațională. }
+</p>
+
+@if (status() === 'error') {
+  <section class="panel state" role="alert">
+    <h2 class="t-heading">Nu am putut încărca structura</h2>
+    <p class="t-muted">{{ errorMessage() }}</p>
+    <div>
+      <p-button label="Încearcă din nou" severity="secondary" [outlined]="true" (onClick)="load()" />
+    </div>
+  </section>
+} @else if (firstLoad()) {
+  <section class="panel table-wrap" aria-busy="true" aria-label="Se încarcă structura">
+    <div class="skel-head"></div>
+    @for (r of skeletonRows; track r) {
+      <div class="skel-row">
+        <p-skeleton width="60%" height="16px" />
+        <p-skeleton width="30%" height="16px" />
+        <p-skeleton width="60%" height="16px" />
+      </div>
+    }
+  </section>
+} @else {
+  <p-tabs [value]="tab()" (valueChange)="setTab($event)">
+    <p-tablist>
+      <p-tab value="departamente">Departamente</p-tab>
+      <p-tab value="posturi">Posturi</p-tab>
+    </p-tablist>
+    <p-tabpanels>
+      <p-tabpanel value="departamente">
+        <div class="section-head">
+          <h2 class="t-heading">Departamente</h2>
+          @if (canManage()) {
+            <p-button data-key="dep-nou" label="Departament nou" icon="pi pi-plus"
+                      (onClick)="open({ kind: 'department', department: null }, 'dep-nou')" />
+          }
+        </div>
+        @if (nodes().length === 0) {
+          <section class="panel state">
+            <p class="t-heading">Nu există departamente.</p>
+            <p class="t-muted">
+              @if (canManage()) { Creează primul departament cu butonul „Departament nou”. } @else { Un administrator poate adăuga departamente. }
+            </p>
+          </section>
+        } @else {
+          <section class="panel table-wrap" [class.busy]="status() === 'loading'" [attr.aria-busy]="status() === 'loading'">
+            <p-table [value]="nodes()" [tableStyle]="{ 'min-width': '36rem' }">
+              <ng-template #header>
+                <tr>
+                  <th scope="col">Departament</th>
+                  <th scope="col" class="num">Angajați</th>
+                  @if (canManage()) { <th scope="col">Acțiuni</th> }
+                </tr>
+              </ng-template>
+              <ng-template #body let-n>
+                <tr>
+                  <td>
+                    <span class="dep-name" [style.padding-left.rem]="n.depth * 1.5"
+                          [attr.title]="n.depth ? n.path : null">
+                      {{ n.department.name }}
+                    </span>
+                  </td>
+                  <td class="num">{{ n.department.employeeCount }}</td>
+                  @if (canManage()) {
+                    <td>
+                      @let why = departmentDeleteReason(n.department);
+                      <div class="actions">
+                        <p-button class="row-action" [attr.data-key]="'dep-edit-' + n.department.id" label="Editează" size="small"
+                                  severity="secondary" [outlined]="true"
+                                  [ariaLabel]="'Editează departamentul ' + n.path"
+                                  (onClick)="open({ kind: 'department', department: n.department }, 'dep-edit-' + n.department.id)" />
+                        <p-button class="row-action" [attr.data-key]="'dep-del-' + n.department.id" label="Șterge" size="small"
+                                  severity="secondary" [outlined]="true" [disabled]="why !== null"
+                                  [ariaLabel]="'Șterge departamentul ' + n.path + (why ? '. Indisponibil: ' + why : '')"
+                                  (onClick)="open({ kind: 'delete-department', department: n.department }, 'dep-del-' + n.department.id)" />
+                      </div>
+                      @if (why) {
+                        <p class="t-body-sm t-muted why">{{ why }}</p>
+                      }
+                    </td>
+                  }
+                </tr>
+              </ng-template>
+            </p-table>
+          </section>
+        }
+      </p-tabpanel>
+
+      <p-tabpanel value="posturi">
+        <div class="section-head">
+          <h2 class="t-heading">Posturi</h2>
+          @if (canManage()) {
+            <p-button data-key="post-nou" label="Post nou" icon="pi pi-plus"
+                      (onClick)="open({ kind: 'position', position: null }, 'post-nou')" />
+          }
+        </div>
+        @if (sortedPositions().length === 0) {
+          <section class="panel state">
+            <p class="t-heading">Nu există posturi.</p>
+            <p class="t-muted">
+              @if (canManage()) { Creează primul post cu butonul „Post nou”. } @else { Un administrator poate adăuga posturi. }
+            </p>
+          </section>
+        } @else {
+          <section class="panel table-wrap" [class.busy]="status() === 'loading'" [attr.aria-busy]="status() === 'loading'">
+            <p-table [value]="sortedPositions()" dataKey="id" [tableStyle]="{ 'min-width': '30rem' }">
+              <ng-template #header>
+                <tr>
+                  <th scope="col">Nume</th>
+                  <th scope="col" class="num">Angajați</th>
+                  @if (canManage()) { <th scope="col">Acțiuni</th> }
+                </tr>
+              </ng-template>
+              <ng-template #body let-p>
+                <tr>
+                  <td>{{ p.name }}</td>
+                  <td class="num">{{ p.employeeCount }}</td>
+                  @if (canManage()) {
+                    <td>
+                      @let why = positionDeleteReason(p);
+                      <div class="actions">
+                        <p-button class="row-action" [attr.data-key]="'post-edit-' + p.id" label="Editează" size="small"
+                                  severity="secondary" [outlined]="true"
+                                  [ariaLabel]="'Editează postul ' + p.name"
+                                  (onClick)="open({ kind: 'position', position: p }, 'post-edit-' + p.id)" />
+                        <p-button class="row-action" [attr.data-key]="'post-del-' + p.id" label="Șterge" size="small"
+                                  severity="secondary" [outlined]="true" [disabled]="why !== null"
+                                  [ariaLabel]="'Șterge postul ' + p.name + (why ? '. Indisponibil: ' + why : '')"
+                                  (onClick)="open({ kind: 'delete-position', position: p }, 'post-del-' + p.id)" />
+                      </div>
+                      @if (why) {
+                        <p class="t-body-sm t-muted why">{{ why }}</p>
+                      }
+                    </td>
+                  }
+                </tr>
+              </ng-template>
+            </p-table>
+          </section>
+        }
+      </p-tabpanel>
+    </p-tabpanels>
+  </p-tabs>
+}
+
+@if (dialog(); as d) {
+  @switch (d.kind) {
+    @case ('department') {
+      <app-department-dialog [department]="d.department" [departments]="departments()" (closed)="onClosed($event)" />
+    }
+    @case ('position') {
+      <app-position-dialog [position]="d.position" (closed)="onClosed($event)" />
+    }
+    @case ('delete-department') {
+      <app-org-delete-dialog kind="department" [itemId]="d.department.id" [name]="d.department.name" (closed)="onClosed($event)" />
+    }
+    @case ('delete-position') {
+      <app-org-delete-dialog kind="position" [itemId]="d.position.id" [name]="d.position.name" (closed)="onClosed($event)" />
+    }
+  }
+}

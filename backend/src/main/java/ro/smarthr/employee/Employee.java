@@ -34,11 +34,11 @@ public class Employee {
     @Column(name = "work_email", length = 254)
     private String workEmail;
 
-    @Column(name = "job_title", length = 150)
-    private String jobTitle;
+    @Column(name = "position_id")
+    private UUID positionId;
 
-    @Column(name = "department", length = 150)
-    private String department;
+    @Column(name = "department_id")
+    private UUID departmentId;
 
     @Column(name = "hire_date")
     private LocalDate hireDate;
@@ -56,18 +56,18 @@ public class Employee {
     protected Employee() {
     }
 
-    public Employee(String firstName, String lastName, String workEmail, String jobTitle, String department,
+    public Employee(String firstName, String lastName, String workEmail, UUID positionId, UUID departmentId,
                     LocalDate hireDate) {
-        update(firstName, lastName, workEmail, jobTitle, department, hireDate);
+        update(firstName, lastName, workEmail, positionId, departmentId, hireDate);
     }
 
-    public void update(String firstName, String lastName, String workEmail, String jobTitle, String department,
+    public void update(String firstName, String lastName, String workEmail, UUID positionId, UUID departmentId,
                        LocalDate hireDate) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.workEmail = workEmail;
-        this.jobTitle = jobTitle;
-        this.department = department;
+        this.positionId = positionId;
+        this.departmentId = departmentId;
         this.hireDate = hireDate;
     }
 
@@ -95,12 +95,12 @@ public class Employee {
         return workEmail;
     }
 
-    public String getJobTitle() {
-        return jobTitle;
+    public UUID getPositionId() {
+        return positionId;
     }
 
-    public String getDepartment() {
-        return department;
+    public UUID getDepartmentId() {
+        return departmentId;
     }
 
     public LocalDate getHireDate() {

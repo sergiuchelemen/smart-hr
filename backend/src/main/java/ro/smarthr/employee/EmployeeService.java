@@ -1,6 +1,11 @@
 package ro.smarthr.employee;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -13,6 +18,8 @@ import ro.smarthr.common.Messages;
 import ro.smarthr.iam.AppUser;
 import ro.smarthr.iam.CurrentUserPrivileges;
 import ro.smarthr.iam.UserRepository;
+import ro.smarthr.org.DepartmentRepository;
+import ro.smarthr.org.PositionRepository;
 import ro.smarthr.platform.CompanyRepository;
 
 @Service
@@ -26,9 +33,14 @@ public class EmployeeService {
     private final UserRepository users;
     private final CompanyRepository companies;
     private final CurrentUserPrivileges currentUser;
+    private final DepartmentRepository departments;
+    private final PositionRepository positions;
 
     public EmployeeService(EmployeeRepository employees, UserRepository users, CompanyRepository companies,
-                           CurrentUserPrivileges currentUser) {
+                           CurrentUserPrivileges currentUser, DepartmentRepository departments,
+                           PositionRepository positions) {
+        this.departments = departments;
+        this.positions = positions;
         this.employees = employees;
         this.users = users;
         this.companies = companies;
@@ -63,7 +75,7 @@ public class EmployeeService {
             }
         }
         employees.updateUserId(id, userId);
-        return EmployeeController.EmployeeResponse.from(find(id));
+        return toResponse(find(id));
     }
 
     /** Angajatul țintă se află în lanțul de manageri al angajatului apelantului (sau e chiar el). */
@@ -105,7 +117,7 @@ public class EmployeeService {
             }
         }
         employees.updateManagerId(id, managerId);
-        return EmployeeController.EmployeeResponse.from(find(id));
+        return toResponse(find(id));
     }
 
     private static void requirePermission(CurrentUserPrivileges.Caller caller, String code) {
@@ -130,36 +142,38 @@ public class EmployeeService {
         var result = employees.findAll(
             PageRequest.of(safePage, safeSize, Sort.by("lastName", "firstName", "id")));
         List<EmployeeController.EmployeeResponse> items =
-            result.getContent().stream().map(EmployeeController.EmployeeResponse::from).toList();
+            toResponses(result.getContent());
         return new EmployeeController.PageResponse(items, safePage, safeSize, result.getTotalElements());
     }
 
     @Transactional(readOnly = true)
     public EmployeeController.EmployeeResponse get(UUID id) {
-        return EmployeeController.EmployeeResponse.from(find(id));
+        return toResponse(find(id));
     }
 
     @Transactional
     public EmployeeController.EmployeeResponse create(EmployeeController.EmployeeRequest r) {
+        requireOrgReferences(r);
         String email = normalizeEmail(r.workEmail());
         if (email != null && employees.existsByWorkEmail(email)) {
             throw new ApiException(HttpStatus.CONFLICT, Messages.EMPLOYEE_EMAIL_TAKEN);
         }
         Employee saved = employees.saveAndFlush(new Employee(r.firstName().trim(), r.lastName().trim(), email,
-            blankToNull(r.jobTitle()), blankToNull(r.department()), r.hireDate()));
-        return EmployeeController.EmployeeResponse.from(saved);
+            r.positionId(), r.departmentId(), r.hireDate()));
+        return toResponse(saved);
     }
 
     @Transactional
     public EmployeeController.EmployeeResponse update(UUID id, EmployeeController.EmployeeRequest r) {
         Employee e = find(id);
+        requireOrgReferences(r);
         String email = normalizeEmail(r.workEmail());
         if (email != null && employees.existsByWorkEmailAndIdNot(email, id)) {
             throw new ApiException(HttpStatus.CONFLICT, Messages.EMPLOYEE_EMAIL_TAKEN);
         }
-        e.update(r.firstName().trim(), r.lastName().trim(), email, blankToNull(r.jobTitle()),
-            blankToNull(r.department()), r.hireDate());
-        return EmployeeController.EmployeeResponse.from(employees.saveAndFlush(e));
+        e.update(r.firstName().trim(), r.lastName().trim(), email, r.positionId(), r.departmentId(),
+            r.hireDate());
+        return toResponse(employees.saveAndFlush(e));
     }
 
     /** Filtrul de tenant face ca id-urile din alte companii să nu fie găsite (404, nu 403). */
@@ -173,7 +187,33 @@ public class EmployeeService {
         return n == null || n.isEmpty() ? null : n;
     }
 
-    private static String blankToNull(String s) {
-        return s == null || s.isBlank() ? null : s.trim();
+    /** Departament/post inexistent sau din altă companie (filtrul de tenant nu îl găsește) => 400. */
+    private void requireOrgReferences(EmployeeController.EmployeeRequest r) {
+        if ((r.departmentId() != null && !departments.existsById(r.departmentId()))
+            || (r.positionId() != null && !positions.existsById(r.positionId()))) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, Messages.ORG_INVALID_REFERENCE);
+        }
+    }
+
+    private EmployeeController.EmployeeResponse toResponse(Employee e) {
+        return toResponses(List.of(e)).get(0);
+    }
+
+    /** Numele se aduc în bloc (câte o interogare per tip), nu per angajat. */
+    private List<EmployeeController.EmployeeResponse> toResponses(List<Employee> list) {
+        Set<UUID> depIds = list.stream().map(Employee::getDepartmentId).filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+        Set<UUID> posIds = list.stream().map(Employee::getPositionId).filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+        Map<UUID, String> depNames = new HashMap<>();
+        Map<UUID, String> posNames = new HashMap<>();
+        if (!depIds.isEmpty()) {
+            departments.findAllByIdIn(depIds).forEach(d -> depNames.put(d.getId(), d.getName()));
+        }
+        if (!posIds.isEmpty()) {
+            positions.findAllByIdIn(posIds).forEach(p -> posNames.put(p.getId(), p.getName()));
+        }
+        return list.stream().map(e -> EmployeeController.EmployeeResponse.from(e,
+            posNames.get(e.getPositionId()), depNames.get(e.getDepartmentId()))).toList();
     }
 }

@@ -11,6 +11,10 @@ import { SelectModule } from 'primeng/select';
 import { AdminService, AdminUser } from '../../core/admin/admin.service';
 import { Employee, EmployeesService } from '../../core/employees/employees.service';
 import { problemDetail } from '../../core/leave/leave.service';
+import { OrgService, flattenDepartments } from '../../core/org/org.service';
+import { AuthService } from '../../core/auth/auth.service';
+import { RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { toIsoDate } from '../../shared/format/date';
 
 const DIALOG_STYLES = `
@@ -49,7 +53,7 @@ function hireRange(c: AbstractControl<Date | null>): ValidationErrors | null {
 /** Angajat nou / Editează angajatul. Fără CNP sau salariu. */
 @Component({
   selector: 'app-employee-form-dialog',
-  imports: [ReactiveFormsModule, ButtonModule, DatePickerModule, DialogModule, InputTextModule, MessageModule],
+  imports: [ReactiveFormsModule, RouterLink, ButtonModule, DatePickerModule, DialogModule, InputTextModule, MessageModule, SelectModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <p-dialog [visible]="true" (visibleChange)="$event || close()" [modal]="true" [draggable]="false"
@@ -86,14 +90,26 @@ function hireRange(c: AbstractControl<Date | null>): ValidationErrors | null {
 
         <div class="row">
           <div class="field">
-            <label class="t-label" for="ang-functie">Funcție (opțional)</label>
-            <input pInputText id="ang-functie" formControlName="jobTitle" maxlength="150" autocomplete="off" />
+            <label class="t-label" id="ang-functie-et">Post (opțional)</label>
+            <p-select inputId="ang-functie" formControlName="positionId" [options]="positionOptions()"
+                      optionLabel="label" optionValue="value" [fluid]="true" appendTo="body"
+                      [loading]="orgLoading()" ariaLabelledBy="ang-functie-et" />
           </div>
           <div class="field">
-            <label class="t-label" for="ang-dep">Departament (opțional)</label>
-            <input pInputText id="ang-dep" formControlName="department" maxlength="150" autocomplete="off" />
+            <label class="t-label" id="ang-dep-et">Departament (opțional)</label>
+            <p-select inputId="ang-dep" formControlName="departmentId" [options]="departmentOptions()"
+                      optionLabel="label" optionValue="value" [fluid]="true" appendTo="body"
+                      [loading]="orgLoading()" ariaLabelledBy="ang-dep-et" />
           </div>
         </div>
+        @if (orgError()) {
+          <p class="t-body-sm err" role="alert">{{ orgError() }}</p>
+        }
+        @if (canManageOrg()) {
+          <p class="t-body-sm">
+            <a routerLink="/organizatie" (click)="close()">Gestionează departamentele și posturile</a>
+          </p>
+        }
 
         <div class="field">
           <label class="t-label" for="ang-data">Data angajării (opțional)</label>
@@ -123,9 +139,20 @@ function hireRange(c: AbstractControl<Date | null>): ValidationErrors | null {
 })
 export class EmployeeFormDialog implements OnInit {
   private readonly api = inject(EmployeesService);
+  private readonly org = inject(OrgService);
+  private readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly employee = input<Employee | null>(null);
+  protected readonly canManageOrg = computed(() => this.auth.hasPermission('ORG_MANAGE'));
+  protected readonly orgLoading = signal(true);
+  protected readonly orgError = signal('');
+  protected readonly departmentOptions = signal<{ label: string; value: string | null }[]>([
+    { label: 'Fără departament', value: null },
+  ]);
+  protected readonly positionOptions = signal<{ label: string; value: string | null }[]>([
+    { label: 'Fără post', value: null },
+  ]);
   readonly closed = output<boolean>();
 
   protected readonly today = new Date();
@@ -139,8 +166,8 @@ export class EmployeeFormDialog implements OnInit {
     firstName: new FormControl('', { nonNullable: true, validators: [notBlank, Validators.maxLength(100)] }),
     lastName: new FormControl('', { nonNullable: true, validators: [notBlank, Validators.maxLength(100)] }),
     workEmail: new FormControl('', { nonNullable: true, validators: [Validators.email, Validators.maxLength(254)] }),
-    jobTitle: new FormControl('', { nonNullable: true, validators: Validators.maxLength(150) }),
-    department: new FormControl('', { nonNullable: true, validators: Validators.maxLength(150) }),
+    positionId: new FormControl<string | null>(null),
+    departmentId: new FormControl<string | null>(null),
     hireDate: new FormControl<Date | null>(null, hireRange),
   });
 
@@ -156,11 +183,30 @@ export class EmployeeFormDialog implements OnInit {
         firstName: e.firstName,
         lastName: e.lastName,
         workEmail: e.workEmail ?? '',
-        jobTitle: e.jobTitle ?? '',
-        department: e.department ?? '',
+        positionId: e.positionId,
+        departmentId: e.departmentId,
         hireDate: hire,
       });
     }
+    forkJoin({ deps: this.org.departments(), pos: this.org.positions() })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ deps, pos }) => {
+          this.departmentOptions.set([
+            { label: 'Fără departament', value: null },
+            ...flattenDepartments(deps).map((n) => ({ label: n.path, value: n.department.id })),
+          ]);
+          this.positionOptions.set([
+            { label: 'Fără post', value: null },
+            ...[...pos].sort((a, b) => a.name.localeCompare(b.name, 'ro')).map((p) => ({ label: p.name, value: p.id })),
+          ]);
+          this.orgLoading.set(false);
+        },
+        error: () => {
+          this.orgLoading.set(false);
+          this.orgError.set('Nu am putut încărca departamentele și posturile. Valorile existente rămân neschimbate.');
+        },
+      });
   }
 
   protected show(name: keyof typeof this.form.controls): boolean {
@@ -184,8 +230,8 @@ export class EmployeeFormDialog implements OnInit {
       firstName: v.firstName.trim(),
       lastName: v.lastName.trim(),
       workEmail: opt(v.workEmail),
-      jobTitle: opt(v.jobTitle),
-      department: opt(v.department),
+      positionId: v.positionId,
+      departmentId: v.departmentId,
       hireDate: v.hireDate ? toIsoDate(v.hireDate) : null,
     };
     const e = this.employee();

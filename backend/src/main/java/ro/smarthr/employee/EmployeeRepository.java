@@ -34,4 +34,19 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("update Employee e set e.managerId = :managerId where e.id = :id")
     int updateManagerId(@Param("id") UUID id, @Param("managerId") UUID managerId);
+
+    boolean existsByDepartmentId(UUID departmentId);
+
+    boolean existsByPositionId(UUID positionId);
+
+    long countByDepartmentId(UUID departmentId);
+
+    long countByPositionId(UUID positionId);
+
+    /** Rânduri [departmentId, count]; filtrul de tenant se aplică entității rădăcină. */
+    @Query("select e.departmentId, count(e) from Employee e where e.departmentId is not null group by e.departmentId")
+    List<Object[]> countPerDepartment();
+
+    @Query("select e.positionId, count(e) from Employee e where e.positionId is not null group by e.positionId")
+    List<Object[]> countPerPosition();
 }
