@@ -46,12 +46,16 @@ Proiectul lucrează cu date personale și sensibile (CNP, salarii, evaluări).
 
 ## Design
 - Design system privat (artifact pe claude.ai): https://claude.ai/artifact/UpQsh7o1onzbULHJg9JJqi. Tokeni, reguli și componente de referință; UI în română, calm, neutru, un singur accent albastru.
-- Skill-ul `design-taste-frontend` e instalat în `.claude/skills/` (pentru pagini precum login; nu pentru dashboard-uri).
+- Skill-ul `design-taste-frontend` e instalat în `.claude/skills/` (pentru pagini precum login; nu pentru dashboard-uri, tabele sau formulare, unde el însuși recomandă o bibliotecă de componente).
+- **Orice sarcină de UI (frontend, machete, ecrane):** orchestratorul invocă întâi skill-ul `design-taste-frontend` (tool-ul Skill; subagenții nu îl au) și declară „Design Read" înainte de cod. Apoi pune în promptul developer-ului: linkul design system-ului, regulile skill-ului care se aplică (un singur accent, fără alb/negru pur, regulă unică de raze, stări de încărcare/gol/eroare, fără em-dash, fără decor) și instrucțiunea de a citi `.claude/skills/design-taste-frontend/SKILL.md` (secțiunile 4, 9 și 14) și `README.md` din design system. Tester-ul verifică aceste reguli la UI, în ambele teme.
+- Pentru dashboard, tabele și formulare: biblioteca de componente (PrimeNG, de confirmat) cu tema din tokenii design system-ului, nu CSS scris de mână.
 
 ## Flux AI SDLC
 Roluri (în `.claude/agents/`): tech-lead → developer → tester → code-reviewer.
 Orchestrare: `.claude/skills/feature/SKILL.md`.
 - Munca mare se împarte în etape mici, fiecare pe propriul branch `feat/*` (poate porni din branch-ul etapei anterioare).
 - **Push automat:** când o etapă are Tester = PASS și Code Reviewer = APPROVED (și build-ul trece), orchestratorul face `git push -u origin <branch-feat>` fără să mai ceară acord. Autentificarea e prin token GitHub salvat în Keychain (HTTPS).
-- Fără deploy, fără push pe `main`, fără `--force`, fără ștergerea branch-urilor. Pull request-ul și unirea în `main` rămân decizia omului.
-- Permisiunile sunt în `.claude/settings.local.json`.
+- **Merge automat în `main`:** după push, când Tester = PASS și Code Reviewer = APPROVED, orchestratorul unește branch-ul în `main` (`git merge --no-ff`, fără `--force`), rulează build-ul pe `main` și face `git push origin main`. Etapele stivuite se unesc în ordinea dependenței. `main` de pe GitHub poate avea istorie separată de cea locală (are doar un `README.md`): se unește cu `--allow-unrelated-histories`.
+- Dacă permisiunile refuză merge-ul sau push-ul pe `main`, orchestratorul se oprește și raportează; nu ocolește și nu modifică el permisiunile.
+- Fără deploy, fără `--force`, fără ștergerea branch-urilor, fără push pe `master`.
+- Permisiunile sunt în `.claude/settings.local.json` și le modifică omul. Pentru merge automat trebuie permise `git push origin main`, `git checkout main`, `git merge --no-ff ...` și eliminată interdicția `git push * main*`.
