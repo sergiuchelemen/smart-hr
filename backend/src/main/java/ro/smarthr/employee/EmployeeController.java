@@ -1,5 +1,6 @@
 package ro.smarthr.employee;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -46,11 +47,19 @@ public class EmployeeController {
     }
 
     public record EmployeeResponse(UUID id, String firstName, String lastName, String workEmail, String jobTitle,
-                                   String department, LocalDate hireDate) {
+                                   String department, LocalDate hireDate, UUID userId,
+                                   UUID managerId) {
         static EmployeeResponse from(Employee e) {
             return new EmployeeResponse(e.getId(), e.getFirstName(), e.getLastName(), e.getWorkEmail(),
-                e.getJobTitle(), e.getDepartment(), e.getHireDate());
+                e.getJobTitle(), e.getDepartment(), e.getHireDate(), e.getUserId(), e.getManagerId());
         }
+    }
+
+    /** Cheia userId e obligatorie (poate fi null, pentru dezlegare); lipsa ei => 400. */
+    public record AccountRequest(@JsonProperty(value = "userId", required = true) UUID userId) {
+    }
+
+    public record ManagerRequest(UUID managerId) {
     }
 
     public record PageResponse(List<EmployeeResponse> items, int page, int size, long totalElements) {
@@ -86,5 +95,19 @@ public class EmployeeController {
     @PreAuthorize("hasAuthority('PERM_EMPLOYEE_WRITE')")
     public EmployeeResponse update(@PathVariable UUID id, @Valid @RequestBody EmployeeRequest request) {
         return service.update(id, request);
+    }
+
+    /** Autorizarea fină (USER_MANAGE) se verifică în serviciu, din DB. */
+    @PutMapping("/{id}/account")
+    @PreAuthorize("hasAuthority('PERM_EMPLOYEE_WRITE')")
+    public EmployeeResponse setAccount(@PathVariable UUID id, @RequestBody AccountRequest request) {
+        return service.setAccount(id, request.userId());
+    }
+
+    /** Autorizarea fină (LEAVE_APPROVE_ALL) se verifică în serviciu, din DB. */
+    @PutMapping("/{id}/manager")
+    @PreAuthorize("hasAuthority('PERM_EMPLOYEE_WRITE')")
+    public EmployeeResponse setManager(@PathVariable UUID id, @RequestBody ManagerRequest request) {
+        return service.setManager(id, request.managerId());
     }
 }
