@@ -2,6 +2,7 @@
   <header class="topbar">
     <p-button class="menu-btn" icon="pi pi-bars" [text]="true" severity="secondary" [rounded]="true"
               aria-label="Deschide meniul" (onClick)="drawerOpen.set(true)" />
+    <a routerLink="/acasa" class="brand" aria-label="Smart HR, pagina de start"><app-logo [markSize]="28" /></a>
     <span class="company t-heading">{{ companyName() }}</span>
     <div class="spacer"></div>
     <span class="user t-body-sm t-muted">{{ email() }}</span>

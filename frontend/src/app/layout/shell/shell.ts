@@ -5,6 +5,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { DrawerModule } from 'primeng/drawer';
 import { SelectModule } from 'primeng/select';
+import { Logo } from '../../shared/logo/logo';
 import { AuthService } from '../../core/auth/auth.service';
 import { HasPermissionDirective } from '../../core/auth/has-permission.directive';
 import { ThemeChoice, ThemeService } from '../../core/theme/theme.service';
@@ -13,7 +14,7 @@ import { ThemeChoice, ThemeService } from '../../core/theme/theme.service';
   selector: 'app-shell',
   imports: [
     RouterOutlet, RouterLink, RouterLinkActive, FormsModule, ButtonModule, DrawerModule, SelectModule,
-    HasPermissionDirective, NgTemplateOutlet,
+    HasPermissionDirective, NgTemplateOutlet, Logo,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './shell.html',
@@ -24,7 +25,7 @@ export class Shell {
   protected readonly theme = inject(ThemeService);
 
   protected readonly drawerOpen = signal(false);
-  protected readonly companyName = computed(() => this.auth.user()?.company.name ?? 'Smart HR');
+  protected readonly companyName = computed(() => this.auth.user()?.company.name ?? '');
   protected readonly email = computed(() => this.auth.user()?.user.email ?? '');
 
   protected readonly themes: { label: string; value: ThemeChoice }[] = [
