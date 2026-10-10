@@ -1,6 +1,10 @@
 <header class="head">
-  <h1 class="t-title">Angajați</h1>
-  <p class="t-muted">Lista angajaților companiei.</p>
+  <div>
+    <h1 class="t-title" tabindex="-1">Angajați</h1>
+    <p class="t-muted">Lista angajaților companiei.</p>
+  </div>
+  <p-button *appHasPermission="'EMPLOYEE_WRITE'" data-key="nou" label="Angajat nou" icon="pi pi-plus"
+            (onClick)="open({ kind: 'form', employee: null }, 'nou')" />
 </header>
 
 @if (status() === 'error') {
@@ -20,13 +24,17 @@
         <p-skeleton width="60%" height="16px" />
         <p-skeleton width="50%" height="16px" />
         <p-skeleton width="40%" height="16px" />
+        <p-skeleton width="50%" height="16px" />
+        <p-skeleton width="30%" height="24px" borderRadius="999px" />
       </div>
     }
   </section>
 } @else if (total() === 0) {
   <section class="panel state">
     <p class="t-heading">Niciun angajat.</p>
-    <p class="t-muted">Angajații adăugați apar aici.</p>
+    <p class="t-muted">
+      @if (can('EMPLOYEE_WRITE')) { Adaugă primul angajat cu butonul „Angajat nou”. } @else { Angajații adăugați apar aici. }
+    </p>
   </section>
 } @else {
   <section class="panel table-wrap" [class.busy]="status() === 'loading'" [attr.aria-busy]="status() === 'loading'">
@@ -34,13 +42,18 @@
              [paginator]="true" [rows]="size()" [first]="first()" [totalRecords]="total()"
              [rowsPerPageOptions]="[10, 20, 50]" dataKey="id"
              currentPageReportTemplate="{first} - {last} din {totalRecords}" [showCurrentPageReport]="true"
-             [tableStyle]="{ 'min-width': '40rem' }">
+             [tableStyle]="{ 'min-width': '64rem' }">
       <ng-template #header>
         <tr>
           <th scope="col">Nume</th>
           <th scope="col">Funcție</th>
           <th scope="col">Departament</th>
           <th scope="col">Data angajării</th>
+          <th scope="col">Manager</th>
+          <th scope="col">Cont</th>
+          @if (can('EMPLOYEE_WRITE') || can('LEAVE_BALANCE_MANAGE')) {
+            <th scope="col">Acțiuni</th>
+          }
         </tr>
       </ng-template>
       <ng-template #body let-e>
@@ -49,8 +62,65 @@
           <td>{{ e.jobTitle || 'Nespecificat' }}</td>
           <td>{{ e.department || 'Nespecificat' }}</td>
           <td class="num">{{ formatDate(e.hireDate) || 'Nespecificat' }}</td>
+          <td>{{ managerName(e) || 'Fără manager' }}</td>
+          <td>
+            @if (e.userId) {
+              <span class="chip chip-brand">Legat</span>
+            } @else {
+              <span class="chip">Nelegat</span>
+            }
+          </td>
+          @if (can('EMPLOYEE_WRITE') || can('LEAVE_BALANCE_MANAGE')) {
+            <td>
+              @let why = ownReason(e);
+              <div class="actions">
+                @if (can('EMPLOYEE_WRITE')) {
+                  <p-button class="row-action" [attr.data-key]="'edit-' + e.id" label="Editează" size="small"
+                            severity="secondary" [outlined]="true" [ariaLabel]="'Editează ' + fullName(e)"
+                            (onClick)="open({ kind: 'form', employee: e }, 'edit-' + e.id)" />
+                }
+                @if (can('EMPLOYEE_WRITE', 'USER_MANAGE')) {
+                  <p-button class="row-action" [attr.data-key]="'cont-' + e.id" label="Cont" size="small"
+                            severity="secondary" [outlined]="true" [disabled]="why !== null"
+                            [ariaLabel]="'Contul angajatului ' + fullName(e) + (why ? '. Indisponibil: ' + why : '')"
+                            (onClick)="open({ kind: 'account', employee: e }, 'cont-' + e.id)" />
+                }
+                @if (can('EMPLOYEE_WRITE', 'LEAVE_APPROVE_ALL')) {
+                  <p-button class="row-action" [attr.data-key]="'mgr-' + e.id" label="Manager" size="small"
+                            severity="secondary" [outlined]="true" [ariaLabel]="'Managerul angajatului ' + fullName(e)"
+                            (onClick)="open({ kind: 'manager', employee: e }, 'mgr-' + e.id)" />
+                }
+                @if (can('LEAVE_BALANCE_MANAGE')) {
+                  <p-button class="row-action" [attr.data-key]="'sold-' + e.id" label="Sold concediu" size="small"
+                            severity="secondary" [outlined]="true" [disabled]="why !== null"
+                            [ariaLabel]="'Soldul de concediu pentru ' + fullName(e) + (why ? '. Indisponibil: ' + why : '')"
+                            (onClick)="open({ kind: 'balance', employee: e }, 'sold-' + e.id)" />
+                }
+              </div>
+              @if (why && (can('LEAVE_BALANCE_MANAGE') || can('EMPLOYEE_WRITE', 'USER_MANAGE'))) {
+                <p class="t-body-sm t-muted why">Contul și soldul tău nu pot fi modificate de tine.</p>
+              }
+            </td>
+          }
         </tr>
       </ng-template>
     </p-table>
   </section>
+}
+
+@if (dialog(); as d) {
+  @switch (d.kind) {
+    @case ('form') {
+      <app-employee-form-dialog [employee]="d.employee" (closed)="onClosed($event)" />
+    }
+    @case ('account') {
+      <app-employee-account-dialog [employee]="d.employee" [directory]="directory()" (closed)="onClosed($event)" />
+    }
+    @case ('manager') {
+      <app-employee-manager-dialog [employee]="d.employee" [directory]="directory()" (closed)="onClosed($event)" />
+    }
+    @case ('balance') {
+      <app-employee-balance-dialog [employee]="d.employee" (closed)="onClosed($event)" />
+    }
+  }
 }
