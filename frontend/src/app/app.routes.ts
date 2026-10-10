@@ -26,6 +26,13 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/angajati/angajati').then((m) => m.AngajatiPage),
       },
       {
+        path: 'organizatie',
+        canActivate: [permissionGuard],
+        data: { permissions: ['EMPLOYEE_READ', 'ORG_MANAGE'], permissionsMode: 'any' },
+        loadComponent: () =>
+          import('./pages/organizatie/organizatie').then((m) => m.OrganizatiePage),
+      },
+      {
         path: 'concedii',
         canActivate: [permissionGuard],
         data: { permissions: ['LEAVE_REQUEST'] },

@@ -56,6 +56,11 @@
           <i class="pi pi-users" aria-hidden="true"></i><span>Angajați</span>
         </a>
       </li>
+      <li *appHasPermission="['EMPLOYEE_READ', 'ORG_MANAGE']; mode: 'any'">
+        <a routerLink="/organizatie" routerLinkActive="active" (click)="drawerOpen.set(false)">
+          <i class="pi pi-sitemap" aria-hidden="true"></i><span>Structură</span>
+        </a>
+      </li>
       <li *appHasPermission="['USER_READ', 'USER_MANAGE', 'ROLE_MANAGE']; mode: 'any'" class="group">
         <span class="group-label t-label t-muted">Administrare</span>
         <ul class="menu" aria-label="Administrare">
