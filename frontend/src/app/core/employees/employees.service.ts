@@ -12,6 +12,8 @@ export interface Employee {
   hireDate: string | null;
   userId: string | null;
   managerId: string | null;
+  departmentId: string | null;
+  positionId: string | null;
 }
 
 export interface EmployeePage {
@@ -25,8 +27,8 @@ export interface EmployeeBody {
   firstName: string;
   lastName: string;
   workEmail: string | null;
-  jobTitle: string | null;
-  department: string | null;
+  positionId: string | null;
+  departmentId: string | null;
   hireDate: string | null;
 }
 
