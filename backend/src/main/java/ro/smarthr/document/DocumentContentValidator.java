@@ -8,7 +8,11 @@ import org.springframework.http.HttpStatus;
 import ro.smarthr.common.ApiException;
 import ro.smarthr.common.Messages;
 
-/** Tipul se stabilește din conținut (nu din extensie sau Content-Type trimis de client). */
+/**
+ * Tipul se stabilește din conținut (nu din extensie sau Content-Type trimis de client).
+ * Un TXT care, după spații/BOM de la început, începe cu '<' (HTML, SVG, XML, script) este respins:
+ * ar putea fi interpretat ca marcaj activ de un client care ignoră tipul declarat.
+ */
 final class DocumentContentValidator {
 
     static final String PDF = "application/pdf";
@@ -31,8 +35,15 @@ final class DocumentContentValidator {
             }
         }
         try {
-            StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
-                .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(b));
+            String text = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(b)).toString();
+            int i = 0;
+            while (i < text.length() && (Character.isWhitespace(text.charAt(i)) || text.charAt(i) == '\uFEFF')) {
+                i++;
+            }
+            if (i < text.length() && text.charAt(i) == '<') {
+                throw invalid();
+            }
         } catch (CharacterCodingException e) {
             throw invalid();
         }
@@ -67,7 +78,8 @@ final class DocumentContentValidator {
         n = n.substring(cut + 1);
         StringBuilder sb = new StringBuilder();
         n.codePoints().filter(cp -> !Character.isISOControl(cp) && cp != '"' && cp != 0x2028 && cp != 0x2029
-            && Character.isDefined(cp)).forEach(sb::appendCodePoint);
+            && !(cp >= 0x202A && cp <= 0x202E) && !(cp >= 0x2066 && cp <= 0x2069) && cp != 0x200E && cp != 0x200F
+            && cp != 0x061C && Character.isDefined(cp)).forEach(sb::appendCodePoint);
         n = sb.toString().trim();
         if (n.codePointCount(0, n.length()) > 150) {
             int dot = n.lastIndexOf('.');

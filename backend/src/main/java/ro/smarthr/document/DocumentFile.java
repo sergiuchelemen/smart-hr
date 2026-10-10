@@ -5,7 +5,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import ro.smarthr.tenancy.mongo.TenantScoped;
 
-/** Octeții fișierului; _id = id-ul documentului. Separat de metadate ca listarea să nu încarce conținutul. */
+/** Octeții fișierului împreună cu contentType/fileName/version (servite din aceeași înregistrare); _id = id-ul documentului. Separat de metadate ca listarea să nu încarce conținutul. */
 @Document("document_files")
 public class DocumentFile implements TenantScoped {
 
@@ -13,13 +13,31 @@ public class DocumentFile implements TenantScoped {
     private UUID id;
     private UUID companyId;
     private byte[] content;
+    private String contentType;
+    private String fileName;
+    private int version;
 
     public DocumentFile() {
     }
 
-    public DocumentFile(UUID id, byte[] content) {
+    public DocumentFile(UUID id, byte[] content, String contentType, String fileName, int version) {
         this.id = id;
         this.content = content;
+        this.contentType = contentType;
+        this.fileName = fileName;
+        this.version = version;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public int getVersion() {
+        return version;
     }
 
     @Override

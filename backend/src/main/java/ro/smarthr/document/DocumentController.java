@@ -91,7 +91,8 @@ public class DocumentController {
             .replace("*", "%2A").replace("'", "%27").replace("(", "%28").replace(")", "%29");
         String disposition = (attachment ? "attachment" : "inline") + "; filename*=UTF-8''" + encoded;
         return ResponseEntity.ok()
-            .contentType(MediaType.parseMediaType(c.contentType()))
+            .contentType("text/plain".equals(c.contentType()) ? MediaType.parseMediaType("text/plain;charset=UTF-8")
+                : MediaType.parseMediaType(c.contentType()))
             .header(HttpHeaders.CONTENT_DISPOSITION, disposition)
             .header("X-Content-Type-Options", "nosniff")
             .header("Content-Security-Policy", "sandbox; default-src 'none'")

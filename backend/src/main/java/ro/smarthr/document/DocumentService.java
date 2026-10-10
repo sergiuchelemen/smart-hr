@@ -143,7 +143,8 @@ public class DocumentService {
         if (f == null) {
             throw notFound();
         }
-        return new Content(d.getContentType(), d.getFileName(), f.getContent());
+        return new Content(f.getContentType() != null ? f.getContentType() : d.getContentType(),
+            f.getFileName() != null ? f.getFileName() : d.getFileName(), f.getContent());
     }
 
     public LibraryDocument create(MultipartFile file, String title, String description, String category,
@@ -161,7 +162,7 @@ public class DocumentService {
         d.setCreatedAt(Instant.now());
         d.setUpdatedAt(d.getCreatedAt());
         d.setUploadedByUserId(c.userId());
-        mongo.insert(new DocumentFile(d.getId(), bytes));
+        mongo.insert(new DocumentFile(d.getId(), bytes, type, d.getFileName(), 1));
         try {
             return mongo.insert(d);
         } catch (RuntimeException e) {
@@ -197,36 +198,40 @@ public class DocumentService {
         String type = DocumentContentValidator.detect(bytes);
         String fileName = sanitizedName(file, type);
         anyDoc(uid);
-        DocumentFile old = mongo.findOne(DocumentFile.class, Criteria.where("_id").is(uid));
-        mongo.findAndModify(DocumentFile.class, Criteria.where("_id").is(uid), new Update().set("content", bytes),
-            false, true);
-        try {
-            Update u = new Update().set("fileName", fileName)
-                .set("contentType", type).set("sizeBytes", (long) bytes.length).inc("version", 1)
-                .set("updatedAt", Instant.now());
-            LibraryDocument d = mongo.findAndModify(LibraryDocument.class, Criteria.where("_id").is(uid), u, true, false);
-            if (d == null) {
-                throw notFound();
-            }
-            return d;
-        } catch (RuntimeException e) {
-            if (old != null) {
-                mongo.findAndModify(DocumentFile.class, Criteria.where("_id").is(uid),
-                    new Update().set("content", old.getContent()), false, false);
-            } else {
-                mongo.delete(DocumentFile.class, Criteria.where("_id").is(uid));
-            }
-            throw e;
+        // Metadatele întâi (fără upsert): dacă documentul a dispărut, nu s-a scris nimic.
+        Update u = new Update().set("fileName", fileName)
+            .set("contentType", type).set("sizeBytes", (long) bytes.length).inc("version", 1)
+            .set("updatedAt", Instant.now());
+        LibraryDocument d = mongo.findAndModify(LibraryDocument.class, Criteria.where("_id").is(uid), u, true, false);
+        if (d == null) {
+            throw notFound();
         }
+        int v = d.getVersion();
+        try {
+            // Scriere monotonă după versiune: o înlocuire mai veche nu o suprascrie pe una mai nouă.
+            mongo.findAndModify(DocumentFile.class, new Criteria().andOperator(Criteria.where("_id").is(uid),
+                    new Criteria().orOperator(Criteria.where("version").lt(v), Criteria.where("version").exists(false))),
+                new Update().set("content", bytes).set("contentType", type).set("fileName", fileName)
+                    .set("version", v), false, true);
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            // există deja o versiune mai nouă a fișierului
+        }
+        // Scrierea fișierului precede verificarea; o ștergere concurentă fie vede fișierul (îl șterge), fie îl vedem noi.
+        if (mongo.count(LibraryDocument.class, Criteria.where("_id").is(uid)) == 0) {
+            mongo.delete(DocumentFile.class, Criteria.where("_id").is(uid));
+            throw notFound();
+        }
+        return d;
     }
 
     public void delete(String id) {
         manager();
         UUID uid = parseId(id);
-        if (mongo.delete(LibraryDocument.class, Criteria.where("_id").is(uid)) == 0) {
+        long removed = mongo.delete(LibraryDocument.class, Criteria.where("_id").is(uid));
+        mongo.delete(DocumentFile.class, Criteria.where("_id").is(uid));
+        if (removed == 0) {
             throw notFound();
         }
-        mongo.delete(DocumentFile.class, Criteria.where("_id").is(uid));
     }
 
     private static String sanitizedName(MultipartFile file, String type) {
