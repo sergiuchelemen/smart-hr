@@ -59,6 +59,8 @@ public class EvaluationService {
     private static final Set<EvaluationStatus> OPEN_STATES =
         Set.of(EvaluationStatus.PENDING_SELF, EvaluationStatus.PENDING_MANAGER);
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(EvaluationService.class);
+
     private enum Mode { SUBJECT, REVIEWER, HR }
 
     private final TenantMongoOperations mongo;
@@ -131,8 +133,16 @@ public class EvaluationService {
             throw stateConflict();
         }
         try {
-            for (Employee e : employees.findAll()) {
+            List<Employee> all = employees.findAll();
+            Map<UUID, Employee> byId = new HashMap<>();
+            all.forEach(x -> byId.put(x.getId(), x));
+            for (Employee e : all) {
                 if (e.getUserId() == null || e.getManagerId() == null || e.getManagerId().equals(e.getId())) {
+                    continue;
+                }
+                // Managerul trebuie să aibă cont, altfel evaluatorul nu s-ar putea autentifica.
+                Employee mgr = byId.get(e.getManagerId());
+                if (mgr == null || mgr.getUserId() == null) {
                     continue;
                 }
                 try {
@@ -142,10 +152,16 @@ public class EvaluationService {
                 }
             }
         } catch (RuntimeException e) {
-            // Ciclul nu rămâne deschis cu evaluări incomplete.
-            mongo.delete(Evaluation.class, Criteria.where("cycleId").is(id));
-            mongo.findAndModify(EvaluationCycle.class, Criteria.where("id").is(id).and("status").is(CycleStatus.OPEN),
-                new Update().set("status", CycleStatus.DRAFT).unset("openedAt"), false, false);
+            // Ciclul nu rămâne deschis cu evaluări incomplete, chiar dacă ștergerea eșuează.
+            try {
+                mongo.delete(Evaluation.class, Criteria.where("cycleId").is(id));
+            } catch (RuntimeException deleteFailure) {
+                log.error("Rollback open: stergerea evaluarilor a esuat ({})", deleteFailure.getClass().getSimpleName());
+            } finally {
+                mongo.findAndModify(EvaluationCycle.class,
+                    Criteria.where("id").is(id).and("status").is(CycleStatus.OPEN),
+                    new Update().set("status", CycleStatus.DRAFT).unset("openedAt"), false, false);
+            }
             throw e;
         }
         return cycleView(opened);
@@ -163,6 +179,8 @@ public class EvaluationService {
         if (closed == null) {
             throw stateConflict();
         }
+        // Limitare cunoscută: o trimitere concurentă între tranziția ciclului și blocare poate finaliza o evaluare
+        // chiar la închidere; rezultatul rămâne consistent (evaluarea apare COMPLETED).
         mongo.updateMulti(Evaluation.class,
             Criteria.where("cycleId").is(id).and("status").ne(EvaluationStatus.COMPLETED),
             new Update().set("locked", true));
@@ -170,7 +188,9 @@ public class EvaluationService {
     }
 
     public ProgressResponse progress(String id, int page, int size) {
-        require(currentUser.load(), "EVALUATION_MANAGE");
+        Caller caller = currentUser.load();
+        require(caller, "EVALUATION_MANAGE");
+        UUID myId = employees.findByUserId(caller.userId()).map(Employee::getId).orElse(null);
         EvaluationCycle cycle = findCycle(id);
         if (cycle == null) {
             throw notFound();
@@ -198,8 +218,12 @@ public class EvaluationService {
             ids.add(e.getReviewerEmployeeId());
         });
         Map<UUID, EmployeeRef> names = refs(ids);
-        List<ProgressRow> items = page1.stream().map(e -> new ProgressRow(e.getId(), ref(names, e.getEmployeeId()),
-            ref(names, e.getReviewerEmployeeId()), e.getStatus(), e.isLocked(), e.getFinalScore())).toList();
+        boolean closed = cycle.getStatus() == CycleStatus.CLOSED;
+        List<ProgressRow> items = page1.stream().map(e -> {
+            boolean own = !closed && e.getEmployeeId().equals(myId);
+            return new ProgressRow(e.getId(), ref(names, e.getEmployeeId()), ref(names, e.getReviewerEmployeeId()),
+                own ? subjectStatus(e) : e.getStatus(), e.isLocked(), own ? null : e.getFinalScore());
+        }).toList();
         List<EmployeeRef> excludedRefs = excluded.stream().limit(MAX_EXCLUDED_LISTED)
             .map(e -> new EmployeeRef(e.getId(), e.getFirstName(), e.getLastName())).toList();
         return new ProgressResponse(cycleView(cycle), counts, excluded.size(), excludedRefs, items, p, s, total);
@@ -301,7 +325,8 @@ public class EvaluationService {
             throw notFound();
         }
         Mode mode;
-        if (me.isPresent() && has(caller, "EVALUATION_SELF") && ev.getEmployeeId().equals(me.get().getId())) {
+        if (me.isPresent() && ev.getEmployeeId().equals(me.get().getId())) {
+            // Propria evaluare: mereu vedere de subiect, indiferent de privilegii.
             mode = Mode.SUBJECT;
         } else if (hr) {
             mode = Mode.HR;
@@ -348,10 +373,14 @@ public class EvaluationService {
     // ---------- reasignare (HR) ----------
 
     public EvaluationResponse reassign(String id, UUID reviewerEmployeeId) {
-        require(currentUser.load(), "EVALUATION_MANAGE");
+        Caller caller = currentUser.load();
+        require(caller, "EVALUATION_MANAGE");
         Evaluation ev = findEvaluation(id);
         if (ev == null) {
             throw notFound();
+        }
+        if (employees.findByUserId(caller.userId()).map(x -> x.getId().equals(ev.getEmployeeId())).orElse(false)) {
+            throw forbidden();
         }
         EvaluationCycle cycle = cycleOf(ev);
         if (ev.getStatus() == EvaluationStatus.COMPLETED || ev.isLocked() || cycle.getStatus() != CycleStatus.OPEN) {
@@ -429,14 +458,20 @@ public class EvaluationService {
             manager = null;
             finalScore = null;
             completedAt = null;
-            if (status == EvaluationStatus.COMPLETED) {
-                status = EvaluationStatus.PENDING_MANAGER;
-            }
+            status = subjectStatus(ev);
         }
-        Double trend = finalScore == null ? null : trend(ev, cycle, data);
+        Double trend = finalScore == null || mode == Mode.REVIEWER ? null : trend(ev, cycle, data);
         return new EvaluationResponse(ev.getId(), cycleView(cycle), ref(names, ev.getEmployeeId()),
             ref(names, ev.getReviewerEmployeeId()), status, ev.isLocked(), self, manager, ev.getSelfScore(),
             finalScore, trend, completedAt);
+    }
+
+    /** Starea văzută de angajat cât ciclul e deschis: COMPLETED se ascunde în starea de dinainte. */
+    private static EvaluationStatus subjectStatus(Evaluation ev) {
+        if (ev.getStatus() == EvaluationStatus.COMPLETED) {
+            return ev.getSelf() == null ? EvaluationStatus.PENDING_SELF : EvaluationStatus.PENDING_MANAGER;
+        }
+        return ev.getStatus();
     }
 
     private static ReviewView reviewView(ReviewEntry r) {
