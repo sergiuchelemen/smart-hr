@@ -2,7 +2,6 @@ package ro.smarthr.iam;
 
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -32,12 +31,13 @@ public class CurrentUserPrivileges {
     @Transactional(readOnly = true)
     public Caller load() {
         UUID userId = userIdFromToken();
+        // Interogări scalare (nu entități): citire proaspătă din DB, chiar dacă s-a așteptat după lock-ul companiei.
         // Filtrul de tenant (din cid) face ca userii altor companii să nu fie găsiți.
-        AppUser user = users.findById(userId).filter(AppUser::isEnabled).orElseThrow(CurrentUserPrivileges::forbidden);
-        Set<String> perms = user.getRoles().stream().flatMap(r -> r.getPermissions().stream())
-            .collect(Collectors.toSet());
-        Set<UUID> roleIds = user.getRoles().stream().map(Role::getId).collect(Collectors.toSet());
-        return new Caller(userId, perms, roleIds);
+        boolean enabled = users.findEnabledById(userId).orElse(false);
+        if (!enabled) {
+            throw forbidden();
+        }
+        return new Caller(userId, users.findPermissionCodes(userId), users.findRoleIds(userId));
     }
 
     /** Validează și extrage sub dintr-un token de tenant; 403 pentru orice anomalie. */

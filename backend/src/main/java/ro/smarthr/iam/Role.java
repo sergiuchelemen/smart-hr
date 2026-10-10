@@ -37,6 +37,8 @@ public class Role {
     @Column(name = "permission_code", nullable = false)
     private Set<String> permissions = new HashSet<>();
 
+    public static final String HR_ADMIN = "HR_ADMIN";
+
     protected Role() {
     }
 
@@ -60,6 +62,14 @@ public class Role {
 
     public boolean isSystem() {
         return system;
+    }
+
+    public boolean isHrAdmin() {
+        return system && HR_ADMIN.equals(name);
+    }
+
+    public void rename(String newName) {
+        this.name = newName;
     }
 
     public Set<String> getPermissions() {

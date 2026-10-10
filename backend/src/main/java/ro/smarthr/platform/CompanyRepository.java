@@ -14,6 +14,8 @@ public interface CompanyRepository extends JpaRepository<Company, UUID> {
 
     boolean existsByCode(String code);
 
+    boolean existsByIdAndEnabledTrue(UUID id);
+
     /** Lock pessimist pe rândul companiei, pentru serializarea modificărilor de ierarhie. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select c from Company c where c.id = :id")

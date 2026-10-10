@@ -23,10 +23,11 @@ public class JwtService {
         this.encoder = encoder;
     }
 
-    public String issueTenantToken(UUID userId, UUID companyId, Collection<String> permissions) {
+    public String issueTenantToken(UUID userId, UUID companyId, Collection<String> permissions, int sessionVersion) {
         JwtClaimsSet.Builder b = base(userId, "tenant");
         b.claim("cid", companyId.toString());
         b.claim("perms", List.copyOf(permissions));
+        b.claim("ver", sessionVersion);
         return encode(b);
     }
 
