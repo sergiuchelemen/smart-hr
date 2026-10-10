@@ -48,6 +48,8 @@ public final class Messages {
 
     public static final String USER_EMAIL_TAKEN = "Există deja un utilizator cu acest email.";
 
+    public static final String COMPANY_CODE_TAKEN = "Codul companiei este deja folosit.";
+
     public static final String SESSION_INVALID = "Sesiune invalidă.";
 
     public static final String SESSION_INVALID_HEADER = "Invalid session.";

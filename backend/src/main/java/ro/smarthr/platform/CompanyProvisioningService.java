@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ro.smarthr.common.ApiException;
 import ro.smarthr.common.Emails;
+import ro.smarthr.common.Messages;
 import ro.smarthr.iam.AppUser;
 import ro.smarthr.iam.Permission;
 import ro.smarthr.iam.PermissionRepository;
@@ -33,7 +34,7 @@ public class CompanyProvisioningService {
 
     public Company createCompany(String name, String code, String adminEmail, String adminPassword) {
         if (companies.existsByCode(code)) {
-            throw new ApiException(HttpStatus.CONFLICT, "Codul companiei este deja folosit.");
+            throw new ApiException(HttpStatus.CONFLICT, Messages.COMPANY_CODE_TAKEN);
         }
         UUID companyId = UUID.randomUUID();
         return TenantContext.runAs(companyId,

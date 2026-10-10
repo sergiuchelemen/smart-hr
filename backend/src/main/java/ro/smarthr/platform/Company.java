@@ -53,6 +53,10 @@ public class Company {
         return enabled;
     }
 
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
