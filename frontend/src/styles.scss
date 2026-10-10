@@ -85,6 +85,10 @@ a {
   border: 0;
 }
 
+.row-action .p-button {
+  min-height: 36px;
+}
+
 .panel {
   background: var(--surface-raised);
   border: 1px solid var(--border);

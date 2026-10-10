@@ -1,0 +1,145 @@
+<div class="filters">
+  <div class="field">
+    <label class="t-label" for="filtru-stare">Stare</label>
+    <p-select inputId="filtru-stare" [options]="statusOptions" optionLabel="label" optionValue="value"
+              [ngModel]="statusFilter()" (ngModelChange)="onStatus($event)" appendTo="body" />
+  </div>
+  @if (showYearFilter()) {
+    <div class="field">
+      <label class="t-label" for="filtru-an">An</label>
+      <p-select inputId="filtru-an" [options]="yearOptions" optionLabel="label" optionValue="value"
+                [ngModel]="yearFilter()" (ngModelChange)="onYear($event)" appendTo="body" />
+    </div>
+  }
+</div>
+
+@if (state() === 'error') {
+  <section class="panel state" role="alert">
+    <h2 class="t-heading">Nu am putut încărca cererile</h2>
+    <p class="t-muted">{{ errorMessage() }}</p>
+    <div>
+      <p-button label="Încearcă din nou" severity="secondary" [outlined]="true" (onClick)="load()" />
+    </div>
+  </section>
+} @else if (firstLoad()) {
+  <section class="panel table-wrap" aria-busy="true" aria-label="Se încarcă cererile">
+    <div class="skel-head"></div>
+    @for (r of skeletonRows; track r) {
+      <div class="skel-row">
+        <p-skeleton width="75%" height="16px" />
+        <p-skeleton width="60%" height="16px" />
+        <p-skeleton width="30%" height="16px" />
+        <p-skeleton width="50%" height="24px" borderRadius="999px" />
+        <p-skeleton width="40%" height="16px" />
+      </div>
+    }
+  </section>
+} @else if (total() === 0) {
+  <section class="panel state">
+    <p class="t-heading">{{ emptyTitle() }}</p>
+    <p class="t-muted">{{ emptyHint() }}</p>
+  </section>
+} @else {
+  <section class="panel table-wrap" [class.busy]="state() === 'loading'" [attr.aria-busy]="state() === 'loading'">
+    <p-table [value]="items()" [lazy]="true" [lazyLoadOnInit]="false" (onLazyLoad)="onLazy($event)"
+             [paginator]="true" [rows]="size()" [first]="first()" [totalRecords]="total()"
+             [rowsPerPageOptions]="[10, 20, 50]" dataKey="id"
+             currentPageReportTemplate="{first} - {last} din {totalRecords}" [showCurrentPageReport]="true"
+             [tableStyle]="{ 'min-width': '44rem' }">
+      <ng-template #header>
+        <tr>
+          @if (showEmployee()) {
+            <th scope="col">Angajat</th>
+          }
+          <th scope="col">Perioadă</th>
+          <th scope="col">Tip</th>
+          <th scope="col">Zile lucrătoare</th>
+          <th scope="col">Stare</th>
+          @if (showActions()) {
+            <th scope="col">Acțiuni</th>
+          }
+        </tr>
+      </ng-template>
+      <ng-template #body let-r>
+        <tr>
+          @if (showEmployee()) {
+            <td>{{ employeeName(r) }}</td>
+          }
+          <td>
+            <span class="num">{{ period(r) }}</span>
+            @if (r.note) {
+              <span class="sub t-body-sm t-muted">Observații: {{ r.note }}</span>
+            }
+          </td>
+          <td>{{ typeLabel(r) }}</td>
+          <td class="num">{{ r.workingDays }}</td>
+          <td>
+            <app-status-pill [status]="r.status" />
+            @if (r.status === 'REJECTED' && r.rejectionReason) {
+              <span class="sub t-body-sm t-muted">Motiv: {{ r.rejectionReason }}</span>
+            }
+          </td>
+          @if (showActions()) {
+            <td>
+              <div class="actions">
+                @if (mode() === 'mine') {
+                  @if (canCancel(r)) {
+                    <p-button class="row-action" label="Anulează" size="small" severity="secondary" [outlined]="true"
+                              (onClick)="openAction('cancel', r)" />
+                  }
+                } @else if (canDecideOn(r)) {
+                  <p-button class="row-action" label="Aprobă" size="small" severity="secondary" [outlined]="true"
+                            (onClick)="openAction('approve', r)" />
+                  <p-button class="row-action" label="Respinge" size="small" severity="secondary" [outlined]="true"
+                            (onClick)="openAction('reject', r)" />
+                }
+              </div>
+            </td>
+          }
+        </tr>
+      </ng-template>
+    </p-table>
+  </section>
+}
+
+<p-dialog [visible]="action() !== null" (visibleChange)="$event || closeAction()" [modal]="true"
+          [draggable]="false" [resizable]="false" [closable]="!busy()" [header]="dialogTitle()"
+          [style]="{ width: '30rem' }" [breakpoints]="{ '640px': '94vw' }">
+  @if (action(); as a) {
+    <div class="dialog-body">
+      @switch (a.kind) {
+        @case ('cancel') {
+          <p>Cererea pentru <span class="num">{{ period(a.request) }}</span> ({{ typeLabel(a.request) }}) va fi anulată și nu mai poate fi reactivată.</p>
+        }
+        @case ('approve') {
+          <p>Aprobi cererea lui {{ employeeName(a.request) }} pentru <span class="num">{{ period(a.request) }}</span> ({{ typeLabel(a.request) }}, <span class="num">{{ a.request.workingDays }}</span> zile lucrătoare)?</p>
+        }
+        @default {
+          <p>Cererea lui {{ employeeName(a.request) }} pentru <span class="num">{{ period(a.request) }}</span> ({{ typeLabel(a.request) }}) va fi respinsă.</p>
+          <div class="field">
+            <label class="t-label" for="motiv-respingere">Motiv</label>
+            <textarea pTextarea id="motiv-respingere" rows="4" [formControl]="reason" [fluid]="true"
+                      [invalid]="submitted() && reason.invalid" aria-describedby="motiv-ajutor"></textarea>
+            <p id="motiv-ajutor" class="t-body-sm" [class.err]="submitted() && reason.invalid" [class.t-muted]="!(submitted() && reason.invalid)">
+              @if (submitted() && reason.hasError('maxlength')) {
+                Motivul poate avea cel mult {{ reasonMax }} de caractere.
+              } @else if (submitted() && reason.invalid) {
+                Motivul este obligatoriu.
+              } @else {
+                Obligatoriu. Solicitantul va vedea acest motiv.
+              }
+              <span class="num count">{{ reasonLength() }}/{{ reasonMax }}</span>
+            </p>
+          </div>
+        }
+      }
+      @if (actionError()) {
+        <p-message severity="error" role="alert">{{ actionError() }}</p-message>
+      }
+    </div>
+  }
+  <ng-template #footer>
+    <p-button label="Renunță" severity="secondary" [text]="true" [disabled]="busy()" (onClick)="closeAction()" />
+    <p-button [label]="confirmLabel()" [loading]="busy()" (onClick)="submitAction()" />
+  </ng-template>
+</p-dialog>
