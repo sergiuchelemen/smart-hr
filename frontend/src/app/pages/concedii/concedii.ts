@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   OnInit,
   computed,
   inject,
@@ -33,6 +34,7 @@ export class ConcediiPage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly balanceLoads = new Subject<void>();
   private readonly list = viewChild(LeaveRequests);
+  private readonly newBtn = viewChild('newBtn', { read: ElementRef });
 
   protected readonly year = new Date().getFullYear();
   protected readonly hasEmployee = computed(() => this.auth.user()?.employee != null);
@@ -77,8 +79,14 @@ export class ConcediiPage implements OnInit {
     this.balanceLoads.next();
   }
 
-  protected onCreated(): void {
+  protected closeDialog(): void {
     this.dialogOpen.set(false);
+    // returnează focusul pe butonul care a deschis dialogul
+    setTimeout(() => this.newBtn()?.nativeElement.querySelector('button')?.focus());
+  }
+
+  protected onCreated(): void {
+    this.closeDialog();
     this.list()?.reload();
     this.loadBalance();
   }

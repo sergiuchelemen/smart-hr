@@ -34,7 +34,7 @@
       </div>
     }
   </section>
-} @else if (total() === 0) {
+} @else if (state() === 'ready' && total() === 0) {
   <section class="panel state">
     <p class="t-heading">{{ emptyTitle() }}</p>
     <p class="t-muted">{{ emptyHint() }}</p>
@@ -85,12 +85,14 @@
                 @if (mode() === 'mine') {
                   @if (canCancel(r)) {
                     <p-button class="row-action" label="Anulează" size="small" severity="secondary" [outlined]="true"
-                              (onClick)="openAction('cancel', r)" />
+                              [ariaLabel]="'Anulează cererea din ' + period(r)" (onClick)="openAction('cancel', r)" />
                   }
                 } @else if (canDecideOn(r)) {
                   <p-button class="row-action" label="Aprobă" size="small" severity="secondary" [outlined]="true"
+                            [ariaLabel]="'Aprobă cererea lui ' + employeeName(r) + ', ' + period(r)"
                             (onClick)="openAction('approve', r)" />
                   <p-button class="row-action" label="Respinge" size="small" severity="secondary" [outlined]="true"
+                            [ariaLabel]="'Respinge cererea lui ' + employeeName(r) + ', ' + period(r)"
                             (onClick)="openAction('reject', r)" />
                 }
               </div>

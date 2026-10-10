@@ -80,7 +80,9 @@ export class LeaveRequests implements OnInit {
   protected readonly skeletonRows = [1, 2, 3, 4, 5];
   protected readonly showEmployee = computed(() => this.mode() === 'review');
   protected readonly showActions = computed(() => this.mode() === 'mine' || this.canDecide());
-  protected readonly filtered = computed(() => this.statusFilter() !== ALL || this.yearFilter() !== 0);
+  protected readonly filtered = computed(
+    () => this.statusFilter() !== (this.defaultStatus() ?? ALL) || this.yearFilter() !== 0,
+  );
 
   protected readonly statusOptions = [
     { label: 'Toate', value: ALL },
@@ -98,11 +100,17 @@ export class LeaveRequests implements OnInit {
     if (this.filtered()) {
       return 'Nicio cerere nu corespunde filtrelor.';
     }
+    if (this.defaultStatus() === 'PENDING') {
+      return 'Nu ai cereri de aprobat.';
+    }
     return this.mode() === 'mine' ? 'Nu ai nicio cerere de concediu.' : 'Nu există cereri de afișat.';
   });
   protected readonly emptyHint = computed(() => {
     if (this.filtered()) {
       return 'Schimbă starea sau anul ca să vezi alte cereri.';
+    }
+    if (this.defaultStatus() === 'PENDING') {
+      return 'Cererile care așteaptă decizia ta apar aici.';
     }
     return this.mode() === 'mine'
       ? 'Apasă Cerere nouă ca să trimiți prima cerere.'

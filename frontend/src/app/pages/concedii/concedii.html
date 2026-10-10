@@ -4,7 +4,7 @@
     <p class="t-muted">Soldul de concediu și cererile trimise de tine.</p>
   </div>
   @if (hasEmployee()) {
-    <p-button label="Cerere nouă" icon="pi pi-plus" (onClick)="dialogOpen.set(true)" />
+    <p-button #newBtn label="Cerere nouă" icon="pi pi-plus" (onClick)="dialogOpen.set(true)" />
   }
 </header>
 
@@ -63,9 +63,9 @@
     }
   </section>
 
-  <app-leave-requests mode="mine" [source]="source" />
+  <app-leave-requests mode="mine" [source]="source" (changed)="loadBalance()" />
 
   @if (dialogOpen()) {
-    <app-new-leave-request-dialog (created)="onCreated()" (closed)="dialogOpen.set(false)" />
+    <app-new-leave-request-dialog (created)="onCreated()" (closed)="closeDialog()" />
   }
 }
