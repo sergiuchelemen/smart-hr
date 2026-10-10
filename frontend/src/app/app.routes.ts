@@ -68,6 +68,24 @@ export const routes: Routes = [
           import('./pages/pontaj-echipa/pontaj-echipa').then((m) => m.PontajEchipaPage),
       },
       {
+        path: 'evaluarile-mele',
+        canActivate: [permissionGuard],
+        data: { permissions: ['EVALUATION_SELF'] },
+        loadComponent: () => import('./pages/evaluarile-mele/evaluarile-mele').then((m) => m.EvaluarileMelePage),
+      },
+      {
+        path: 'evaluari-echipa',
+        canActivate: [permissionGuard],
+        data: { permissions: ['EVALUATION_REVIEW'] },
+        loadComponent: () => import('./pages/evaluari-echipa/evaluari-echipa').then((m) => m.EvaluariEchipaPage),
+      },
+      {
+        path: 'cicluri-evaluare',
+        canActivate: [permissionGuard],
+        data: { permissions: ['EVALUATION_MANAGE'] },
+        loadComponent: () => import('./pages/cicluri-evaluare/cicluri-evaluare').then((m) => m.CicluriEvaluarePage),
+      },
+      {
         path: 'documente',
         loadComponent: () => import('./pages/documente/documente').then((m) => m.DocumentePage),
       },
