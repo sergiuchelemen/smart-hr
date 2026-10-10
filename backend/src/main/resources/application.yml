@@ -18,6 +18,10 @@ spring:
       uuid-representation: standard
       repositories:
         type: none
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
   jpa:
     open-in-view: false
     show-sql: false

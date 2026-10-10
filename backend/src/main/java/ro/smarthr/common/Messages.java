@@ -84,6 +84,10 @@ public final class Messages {
 
     public static final String TIMESHEET_FUTURE_MONTH = "Luna nu a început încă.";
 
+    public static final String DOCUMENT_INVALID_FILE = "Fișier invalid: sunt permise doar PDF și text UTF-8, până la 10 MB.";
+
+    public static final String DOCUMENT_TOO_LARGE = "Fișierul depășește dimensiunea maximă de 10 MB.";
+
     private Messages() {
     }
 }
