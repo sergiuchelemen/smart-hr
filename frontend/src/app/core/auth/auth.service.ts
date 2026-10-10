@@ -5,6 +5,7 @@ import { Observable, firstValueFrom, tap } from 'rxjs';
 import { LoginRequest, MeResponse, TokenPayload, TokenResponse } from './auth.models';
 
 const TOKEN_KEY = 'smarthr.token';
+const EXPIRY_SKEW_MS = 5000;
 
 function decodePayload(token: string | null): TokenPayload | null {
   if (!token) {
@@ -77,6 +78,9 @@ export class AuthService {
   }
 
   private setToken(token: string): void {
+    if (!decodePayload(token)?.exp) {
+      throw new Error('Token invalid');
+    }
     try {
       sessionStorage.setItem(TOKEN_KEY, token);
     } catch {
@@ -111,8 +115,8 @@ export class AuthService {
     if (!exp) {
       return;
     }
-    // setTimeout acceptă cel mult ~24,8 zile
-    const ms = Math.min(exp * 1000 - Date.now(), 2_147_000_000);
+    // toleranță pentru ceasul clientului ușor înaintea serverului; setTimeout acceptă cel mult ~24,8 zile
+    const ms = Math.min(exp * 1000 - Date.now() + EXPIRY_SKEW_MS, 2_147_000_000);
     this.expiryTimer = setTimeout(() => this.logout(), Math.max(ms, 0));
   }
 

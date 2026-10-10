@@ -28,13 +28,6 @@ p {
   margin: 0;
 }
 
-.t-display {
-  font-size: 44px;
-  line-height: 48px;
-  font-weight: 600;
-  letter-spacing: -0.022em;
-}
-
 .t-title {
   font-size: 24px;
   line-height: 30px;
@@ -88,13 +81,8 @@ a {
   box-shadow: none;
 }
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
+.p-datatable-paginator-bottom {
+  border: 0;
 }
 
 .panel {

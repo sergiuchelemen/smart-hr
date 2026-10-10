@@ -7,13 +7,14 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const token = auth.token();
   const isLogin = req.url.endsWith('/api/auth/login');
+  const isApi = req.url.startsWith('/api/');
   const request =
-    token && req.url.startsWith('/api/') && !isLogin
+    token && isApi && !isLogin
       ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
       : req;
   return next(request).pipe(
     catchError((err: unknown) => {
-      if (err instanceof HttpErrorResponse && err.status === 401 && !isLogin) {
+      if (err instanceof HttpErrorResponse && err.status === 401 && isApi && !isLogin) {
         auth.logout();
       }
       return throwError(() => err);
