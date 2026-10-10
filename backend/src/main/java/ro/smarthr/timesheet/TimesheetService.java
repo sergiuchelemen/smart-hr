@@ -135,9 +135,14 @@ public class TimesheetService {
         Employee me = ownEmployee(caller);
         checkWindow(date, LocalDate.now(ZONE));
         requireEditable(me.getId(), YearMonth.from(date));
-        mongo.delete(TimesheetEntry.class,
-            Criteria.where("employeeId").is(me.getId()).and("date").is(date.toString()));
+        Criteria key = Criteria.where("employeeId").is(me.getId()).and("date").is(date.toString());
+        TimesheetEntry old = mongo.findOne(TimesheetEntry.class, key);
+        mongo.delete(TimesheetEntry.class, key);
         if (!EDITABLE.contains(statusOf(me.getId(), YearMonth.from(date)))) {
+            // Luna s-a blocat concurent: restaurează ziua ștearsă.
+            if (old != null) {
+                writeEntry(me.getId(), date.toString(), old.getMinutes(), old.getType(), old.getNote(), caller.userId());
+            }
             throw new ApiException(HttpStatus.CONFLICT, Messages.TIMESHEET_MONTH_LOCKED);
         }
     }
