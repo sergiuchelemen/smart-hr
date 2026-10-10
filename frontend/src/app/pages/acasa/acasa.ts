@@ -13,6 +13,24 @@ import { HasPermissionDirective } from '../../core/auth/has-permission.directive
       <p class="t-muted">Alege o secțiune pentru a începe.</p>
     </header>
     <ul class="shortcuts">
+      <li *appHasPermission="'LEAVE_REQUEST'">
+        <a routerLink="/concedii" class="card panel">
+          <span class="t-heading">Concedii</span>
+          <span class="t-body-sm t-muted">Vezi soldul și trimite o cerere de concediu.</span>
+        </a>
+      </li>
+      <li *appHasPermission="['LEAVE_APPROVE', 'LEAVE_APPROVE_ALL']; mode: 'any'">
+        <a routerLink="/aprobari" class="card panel">
+          <span class="t-heading">Aprobări</span>
+          <span class="t-body-sm t-muted">Aprobă sau respinge cererile de concediu.</span>
+        </a>
+      </li>
+      <li *appHasPermission="'LEAVE_READ_ALL'">
+        <a routerLink="/concedii/toate" class="card panel">
+          <span class="t-heading">Toate cererile</span>
+          <span class="t-body-sm t-muted">Cererile de concediu ale tuturor angajaților.</span>
+        </a>
+      </li>
       <li *appHasPermission="'EMPLOYEE_READ'">
         <a routerLink="/angajati" class="card panel">
           <span class="t-heading">Angajați</span>

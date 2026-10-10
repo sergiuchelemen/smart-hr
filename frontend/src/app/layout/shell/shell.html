@@ -34,6 +34,21 @@
           <i class="pi pi-home" aria-hidden="true"></i><span>Acasă</span>
         </a>
       </li>
+      <li *appHasPermission="'LEAVE_REQUEST'">
+        <a routerLink="/concedii" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="drawerOpen.set(false)">
+          <i class="pi pi-calendar" aria-hidden="true"></i><span>Concedii</span>
+        </a>
+      </li>
+      <li *appHasPermission="['LEAVE_APPROVE', 'LEAVE_APPROVE_ALL']; mode: 'any'">
+        <a routerLink="/aprobari" routerLinkActive="active" (click)="drawerOpen.set(false)">
+          <i class="pi pi-check-circle" aria-hidden="true"></i><span>Aprobări</span>
+        </a>
+      </li>
+      <li *appHasPermission="'LEAVE_READ_ALL'">
+        <a routerLink="/concedii/toate" routerLinkActive="active" (click)="drawerOpen.set(false)">
+          <i class="pi pi-list" aria-hidden="true"></i><span>Toate cererile</span>
+        </a>
+      </li>
       <li *appHasPermission="'EMPLOYEE_READ'">
         <a routerLink="/angajati" routerLinkActive="active" (click)="drawerOpen.set(false)">
           <i class="pi pi-users" aria-hidden="true"></i><span>Angajați</span>
