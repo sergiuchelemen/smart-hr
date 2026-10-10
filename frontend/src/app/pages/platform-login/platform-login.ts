@@ -96,6 +96,7 @@ export class PlatformLoginPage {
       },
       error: (err: unknown) => {
         this.loading.set(false);
+        this.form.controls.password.reset('');
         const unavailable = err instanceof HttpErrorResponse && (err.status === 0 || err.status >= 500);
         this.error.set(
           unavailable
