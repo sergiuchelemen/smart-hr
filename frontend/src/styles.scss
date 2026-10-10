@@ -89,6 +89,17 @@ a {
 
 .row-action .p-button {
   min-height: 36px;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--border-strong);
+}
+
+.row-action .p-button:not(:disabled):hover {
+  background: var(--surface-sunken);
+}
+
+.row-action .p-button:disabled {
+  opacity: 0.55;
 }
 
 .panel {
