@@ -70,6 +70,20 @@ public final class Messages {
 
     public static final String SESSION_INVALID_HEADER = "Invalid session.";
 
+    public static final String TIMESHEET_FUTURE_DATE = "Nu se poate pontaja o zi viitoare.";
+
+    public static final String TIMESHEET_DATE_TOO_OLD = "Ziua este prea veche pentru a fi modificată.";
+
+    public static final String TIMESHEET_DUPLICATE_DATE = "Aceeași zi apare de mai multe ori.";
+
+    public static final String TIMESHEET_MONTH_LOCKED = "Luna este trimisă sau aprobată și nu mai poate fi modificată.";
+
+    public static final String TIMESHEET_DAY_BLOCKED = "Ziua este concediu sau sărbătoare legală.";
+
+    public static final String TIMESHEET_STATE_CONFLICT = "Pontajul nu este în starea necesară pentru această acțiune.";
+
+    public static final String TIMESHEET_FUTURE_MONTH = "Luna nu a început încă.";
+
     private Messages() {
     }
 }

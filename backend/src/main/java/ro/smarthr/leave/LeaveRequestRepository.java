@@ -29,4 +29,9 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, UUID
         + "and r.startDate <= :end and r.endDate >= :start")
     boolean existsActiveOverlap(@Param("employeeId") UUID employeeId, @Param("start") LocalDate start,
                                 @Param("end") LocalDate end);
+
+    @Query("select r from LeaveRequest r where r.employeeId in :ids "
+        + "and r.status = ro.smarthr.leave.LeaveStatus.APPROVED and r.startDate <= :to and r.endDate >= :from")
+    java.util.List<LeaveRequest> findApprovedOverlapping(@Param("ids") java.util.Collection<UUID> ids,
+                                                         @Param("from") LocalDate from, @Param("to") LocalDate to);
 }
