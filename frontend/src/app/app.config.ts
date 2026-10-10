@@ -20,6 +20,17 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([jwtInterceptor])),
     providePrimeNG({
       ripple: false,
+      translation: {
+        firstDayOfWeek: 1,
+        dayNames: ['duminică', 'luni', 'marți', 'miercuri', 'joi', 'vineri', 'sâmbătă'],
+        dayNamesShort: ['dum', 'lun', 'mar', 'mie', 'joi', 'vin', 'sâm'],
+        dayNamesMin: ['D', 'L', 'M', 'M', 'J', 'V', 'S'],
+        monthNames: ['ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie', 'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie'],
+        monthNamesShort: ['ian.', 'feb.', 'mar.', 'apr.', 'mai', 'iun.', 'iul.', 'aug.', 'sept.', 'oct.', 'nov.', 'dec.'],
+        today: 'Azi',
+        clear: 'Șterge',
+        weekHeader: 'Săpt.',
+      },
       theme: {
         preset: SmartHrPreset,
         options: { darkModeSelector: '[data-theme="dark"]', cssLayer: false },

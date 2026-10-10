@@ -25,6 +25,25 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/angajati/angajati').then((m) => m.AngajatiPage),
       },
       {
+        path: 'concedii',
+        canActivate: [permissionGuard],
+        data: { permissions: ['LEAVE_REQUEST'] },
+        loadComponent: () => import('./pages/concedii/concedii').then((m) => m.ConcediiPage),
+      },
+      {
+        path: 'concedii/toate',
+        canActivate: [permissionGuard],
+        data: { permissions: ['LEAVE_READ_ALL'] },
+        loadComponent: () =>
+          import('./pages/toate-cererile/toate-cererile').then((m) => m.ToateCererilePage),
+      },
+      {
+        path: 'aprobari',
+        canActivate: [permissionGuard],
+        data: { permissions: ['LEAVE_APPROVE', 'LEAVE_APPROVE_ALL'], permissionsMode: 'any' },
+        loadComponent: () => import('./pages/aprobari/aprobari').then((m) => m.AprobariPage),
+      },
+      {
         path: 'acces-interzis',
         loadComponent: () =>
           import('./pages/acces-interzis/acces-interzis').then((m) => m.AccesInterzisPage),

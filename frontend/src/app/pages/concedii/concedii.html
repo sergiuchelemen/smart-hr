@@ -1,0 +1,71 @@
+<header class="head">
+  <div>
+    <h1 class="t-title">Cererile mele</h1>
+    <p class="t-muted">Soldul de concediu și cererile trimise de tine.</p>
+  </div>
+  @if (hasEmployee()) {
+    <p-button label="Cerere nouă" icon="pi pi-plus" (onClick)="dialogOpen.set(true)" />
+  }
+</header>
+
+@if (!hasEmployee()) {
+  <section class="panel state">
+    <p class="t-heading">Contul tău nu este asociat unui angajat.</p>
+    <p class="t-muted">Contactează departamentul HR.</p>
+  </section>
+} @else {
+  <section class="panel balance" aria-labelledby="titlu-sold">
+    <h2 class="t-heading" id="titlu-sold">Sold pe <span class="num">{{ year }}</span></h2>
+    @if (balanceError()) {
+      <div class="balance-error" role="alert">
+        <p class="t-muted">{{ balanceError() }}</p>
+        <p-button label="Încearcă din nou" severity="secondary" [outlined]="true" (onClick)="loadBalance()" />
+      </div>
+    } @else if (balance(); as b) {
+      <dl class="figures">
+        <div class="figure main">
+          <dt class="t-label t-muted">Disponibil</dt>
+          <dd class="value num">{{ b.available }}</dd>
+          <dd class="t-body-sm t-muted">zile</dd>
+        </div>
+        <div class="figure">
+          <dt class="t-label t-muted">Folosit</dt>
+          <dd class="value num">{{ b.used }}</dd>
+          <dd class="t-body-sm t-muted">zile</dd>
+        </div>
+        <div class="figure">
+          <dt class="t-label t-muted">În așteptare</dt>
+          <dd class="value num">{{ b.pending }}</dd>
+          <dd class="t-body-sm t-muted">zile</dd>
+        </div>
+        <div class="figure">
+          <dt class="t-label t-muted">Total</dt>
+          <dd class="value num">{{ total() }}</dd>
+          <dd class="t-body-sm t-muted">
+            @if (b.carriedOver > 0) {
+              <span class="num">{{ b.carriedOver }}</span> reportate din anul trecut
+            } @else {
+              zile pe an
+            }
+          </dd>
+        </div>
+      </dl>
+    } @else {
+      <div class="figures" aria-busy="true" aria-label="Se încarcă soldul">
+        @for (i of [1, 2, 3, 4]; track i) {
+          <div class="figure">
+            <p-skeleton width="6rem" height="14px" />
+            <p-skeleton width="3rem" height="32px" />
+            <p-skeleton width="2.5rem" height="14px" />
+          </div>
+        }
+      </div>
+    }
+  </section>
+
+  <app-leave-requests mode="mine" [source]="source" />
+
+  @if (dialogOpen()) {
+    <app-new-leave-request-dialog (created)="onCreated()" (closed)="dialogOpen.set(false)" />
+  }
+}
