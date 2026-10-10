@@ -107,3 +107,21 @@ a {
     scroll-behavior: auto !important;
   }
 }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chip.chip-brand {
+  background: var(--brand-tint);
+  color: var(--brand-ink);
+}
