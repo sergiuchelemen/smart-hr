@@ -9,7 +9,9 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -31,14 +33,41 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problem(HttpStatus.FORBIDDEN));
     }
 
+    /** Eșec de autentificare: mereu același răspuns generic. */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<Object> handleAuthentication(AuthenticationException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, Messages.BAD_CREDENTIALS);
+        pd.setTitle(HttpStatus.UNAUTHORIZED.getReasonPhrase());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(pd);
+    }
+
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<Object> handleApi(ApiException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(ex.getStatus(), ex.getMessage());
+        pd.setTitle(ex.getStatus().getReasonPhrase());
+        return ResponseEntity.status(ex.getStatus()).body(pd);
+    }
+
+    /** Încălcare de constrângere unică (ex: cursă la creare); mesajul excepției poate conține date, nu se ecoizează. */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Object> handleIntegrity(DataIntegrityViolationException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Conflict cu datele existente.");
+        pd.setTitle(HttpStatus.CONFLICT.getReasonPhrase());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleGeneric(Exception ex) {
-        String errorId = UUID.randomUUID().toString();
-        // Se loghează doar tipul excepției, nu mesajul (poate conține date personale).
-        log.error("Eroare neașteptată [errorId={}]: {}", errorId, ex.getClass().getName());
         ProblemDetail pd = problem(HttpStatus.INTERNAL_SERVER_ERROR);
-        pd.setProperty("errorId", errorId);
+        logServerError(ex, pd);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(pd);
+    }
+
+    /** Se loghează doar clasa excepției + errorId, nu mesajul (poate conține date personale). */
+    private static void logServerError(Exception ex, ProblemDetail pd) {
+        String errorId = UUID.randomUUID().toString();
+        log.error("Eroare neașteptată [errorId={}]: {}", errorId, ex.getClass().getName());
+        pd.setProperty("errorId", errorId);
     }
 
     /** Toate excepțiile tratate de clasa de bază primesc un detail generic (fără ecou de input). */
@@ -48,6 +77,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ResponseEntity<Object> response = super.handleExceptionInternal(ex, body, headers, statusCode, request);
         if (response != null && response.getBody() instanceof ProblemDetail pd) {
             pd.setDetail(genericDetail(statusCode));
+            if (statusCode.is5xxServerError()) {
+                logServerError(ex, pd);
+            }
         }
         return response;
     }
