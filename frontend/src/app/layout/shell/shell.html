@@ -61,6 +61,21 @@
           <i class="pi pi-table" aria-hidden="true"></i><span>Pontaj echipă</span>
         </a>
       </li>
+      <li *appHasPermission="'EVALUATION_SELF'">
+        <a routerLink="/evaluarile-mele" routerLinkActive="active" (click)="drawerOpen.set(false)">
+          <i class="pi pi-star" aria-hidden="true"></i><span>Evaluările mele</span>
+        </a>
+      </li>
+      <li *appHasPermission="'EVALUATION_REVIEW'">
+        <a routerLink="/evaluari-echipa" routerLinkActive="active" (click)="drawerOpen.set(false)">
+          <i class="pi pi-clipboard" aria-hidden="true"></i><span>Evaluări echipă</span>
+        </a>
+      </li>
+      <li *appHasPermission="'EVALUATION_MANAGE'">
+        <a routerLink="/cicluri-evaluare" routerLinkActive="active" (click)="drawerOpen.set(false)">
+          <i class="pi pi-sync" aria-hidden="true"></i><span>Cicluri de evaluare</span>
+        </a>
+      </li>
       <li>
         <a routerLink="/documente" routerLinkActive="active" (click)="drawerOpen.set(false)">
           <i class="pi pi-file" aria-hidden="true"></i><span>Documente</span>

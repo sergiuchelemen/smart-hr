@@ -43,6 +43,24 @@ import { HasPermissionDirective } from '../../core/auth/has-permission.directive
           <span class="t-body-sm t-muted">Vezi și aprobă pontajele lunare.</span>
         </a>
       </li>
+      <li *appHasPermission="'EVALUATION_SELF'">
+        <a routerLink="/evaluarile-mele" class="card panel">
+          <span class="t-heading">Evaluările mele</span>
+          <span class="t-body-sm t-muted">Completează autoevaluarea și vezi rezultatele.</span>
+        </a>
+      </li>
+      <li *appHasPermission="'EVALUATION_REVIEW'">
+        <a routerLink="/evaluari-echipa" class="card panel">
+          <span class="t-heading">Evaluări echipă</span>
+          <span class="t-body-sm t-muted">Evaluează angajații din echipa ta.</span>
+        </a>
+      </li>
+      <li *appHasPermission="'EVALUATION_MANAGE'">
+        <a routerLink="/cicluri-evaluare" class="card panel">
+          <span class="t-heading">Cicluri de evaluare</span>
+          <span class="t-body-sm t-muted">Deschide ciclurile și urmărește progresul.</span>
+        </a>
+      </li>
       <li>
         <a routerLink="/documente" class="card panel">
           <span class="t-heading">Documente</span>
