@@ -1,5 +1,3 @@
-export type Permission = 'EMPLOYEE_READ' | 'EMPLOYEE_WRITE' | 'USER_READ' | 'USER_MANAGE' | 'ROLE_MANAGE';
-
 export interface TokenResponse {
   accessToken: string;
   tokenType: string;
