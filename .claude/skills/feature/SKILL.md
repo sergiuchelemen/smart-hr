@@ -38,7 +38,7 @@ Pentru `iterația = 1..3`:
 Dacă după 3 iterații nu e rezolvat: **NU face push**. Raportează starea (ce trece, ce nu, problemele rămase) și lasă decizia utilizatorului.
 
 ## Pasul 3: push (automat, doar la succes)
-Push-ul se face singur, fără să ceri acord, imediat ce Tester = PASS și Reviewer = APPROVED.
+**Regulă fermă: nu întreba utilizatorul despre push sau merge.** Push-ul (și merge-ul din Pasul 3b) se fac singure, imediat ce etapa e gata: build OK, Reviewer = APPROVED și, unde se poate rula funcțional, Tester = PASS. La UI (tester-ul nu are browser) ajung build-ul și Reviewer = APPROVED; testul manual al utilizatorului se corectează ulterior, într-o etapă nouă. Raportezi după ce ai făcut, nu ceri permisiunea înainte.
 1. Rulează încă o dată build-ul proiectului (comanda din `CLAUDE.md`). Dacă pică, tratează ca eșec.
 2. Verifică `git status`: pe branch nu trebuie să rămână fișiere ale muncii tale necomise. Nu comite `.env`, `.docx` sau alte documente personale.
 3. `git push -u origin <branch-feat>`. Dacă push-ul eșuează din cauza autentificării (ex. `could not read Username`, 403), nu încerca alte variante și nu pune tokenuri în comenzi: raportează eroarea și lasă omul să rezolve.
