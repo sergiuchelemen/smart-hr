@@ -11,7 +11,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.time.LocalDate;
 
-/** Data angajării nu poate fi mai departe de 1 an în viitor (null acceptat). */
+/** Data angajării: între 1900-01-01 și cel mult 1 an în viitor (null acceptat). */
 @Documented
 @Constraint(validatedBy = ValidHireDate.Validator.class)
 @Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.RECORD_COMPONENT})
@@ -25,9 +25,12 @@ public @interface ValidHireDate {
     Class<? extends Payload>[] payload() default {};
 
     class Validator implements ConstraintValidator<ValidHireDate, LocalDate> {
+        private static final LocalDate MIN_DATE = LocalDate.of(1900, 1, 1);
+
         @Override
         public boolean isValid(LocalDate value, ConstraintValidatorContext ctx) {
-            return value == null || !value.isAfter(LocalDate.now().plusYears(1));
+            return value == null
+                || (!value.isBefore(MIN_DATE) && !value.isAfter(LocalDate.now().plusYears(1)));
         }
     }
 }
