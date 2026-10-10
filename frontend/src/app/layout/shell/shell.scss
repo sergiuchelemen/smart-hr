@@ -60,6 +60,9 @@
   }
 }
 
+.group { margin-top: var(--space-3); display: grid; gap: var(--space-1); }
+.group-label { padding: 0 var(--space-4); }
+
 @media (max-width: 900px) {
   .shell {
     grid-template-columns: 1fr;

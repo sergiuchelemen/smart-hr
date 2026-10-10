@@ -28,6 +28,12 @@ Subagenții nu pot invoca skill-uri. Tu, orchestratorul:
 3. În promptul tester-ului include verificarea acelor reguli în tema luminoasă și în cea întunecată.
 Skill-ul nu se aplică dashboard-urilor și tabelelor de date (vezi `CLAUDE.md`).
 
+## Optimizare timp și tokeni (cerință explicită a utilizatorului)
+Prompturi scurte către subagenți (trimite la `CLAUDE.md`, fișiere și plan, nu retranscrie); cere rapoarte scurte (maxim ~25 de linii); tech-lead doar la module mari sau noi; combină etape mici într-o singură rulare de developer; la backend de securitate o singură rundă tester+reviewer, re-verificare doar pentru blocante; sugestiile minore se strâng și se repară la final; reparațiile mici le faci direct, fără subagent; nu opri/reporni serviciile fără nevoie.
+
+## Flux rapid pentru UI (cerință explicită a utilizatorului)
+Dacă cerința e DOAR interfață (frontend): după Pasul 1b, rulează doar `developer` (el verifică build-ul, grep-urile de design și endpoint-urile prin proxy). NU rula `tester` și NU rula `code-reviewer` pe etapă: treci direct la Pasul 3 (push) și 3b (merge) după ce build-ul trece. Un singur `code-reviewer` rulează la finalul feature-ului întreg, pe tot diff-ul de UI, iar observațiile se repară într-o etapă ulterioară. Backend-ul, autentificarea, privilegiile și orice cod de securitate folosesc bucla completă de mai jos.
+
 ## Pasul 2: bucla de calitate (maxim 3 iterații)
 Pentru `iterația = 1..3`:
 1. **Developer**: apelează `developer` cu planul (și, de la iterația 2, cu feedback-ul complet de la Tester/Reviewer).

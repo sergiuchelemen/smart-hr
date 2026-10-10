@@ -3,7 +3,13 @@ import { LEAVE_STATUS_LABELS, LeaveStatus } from '../../core/leave/leave.service
 
 type Shape = 'circle' | 'diamond' | 'square' | 'ring';
 
-const VARIANTS: Record<LeaveStatus, { tone: string; shape: Shape }> = {
+export type PillStatus = LeaveStatus | 'ACTIVE' | 'DISABLED';
+
+const EXTRA_LABELS = { ACTIVE: 'Activ', DISABLED: 'Dezactivat' } as const;
+
+const VARIANTS: Record<PillStatus, { tone: string; shape: Shape }> = {
+  ACTIVE: { tone: 'success', shape: 'circle' },
+  DISABLED: { tone: 'neutral', shape: 'ring' },
   APPROVED: { tone: 'success', shape: 'circle' },
   PENDING: { tone: 'warning', shape: 'diamond' },
   REJECTED: { tone: 'danger', shape: 'square' },
@@ -41,7 +47,10 @@ const VARIANTS: Record<LeaveStatus, { tone: string; shape: Shape }> = {
   `,
 })
 export class StatusPill {
-  readonly status = input.required<LeaveStatus>();
-  protected readonly label = computed(() => LEAVE_STATUS_LABELS[this.status()]);
+  readonly status = input.required<PillStatus>();
+  protected readonly label = computed(() => {
+    const s = this.status();
+    return s === 'ACTIVE' || s === 'DISABLED' ? EXTRA_LABELS[s] : LEAVE_STATUS_LABELS[s];
+  });
   protected readonly variant = computed(() => VARIANTS[this.status()]);
 }
