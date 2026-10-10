@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { LEAVE_STATUS_LABELS, LeaveStatus } from '../../core/leave/leave.service';
+import { CYCLE_STATUS_LABELS, CycleStatus, EVALUATION_STATUS_LABELS, EvaluationStatus } from '../../core/evaluation/evaluation.service';
 import { TIMESHEET_STATUS_LABELS, TimesheetStatus } from '../../core/timesheet/timesheet.service';
 
 type Shape = 'circle' | 'diamond' | 'square' | 'ring';
 
-export type PillStatus = LeaveStatus | 'ACTIVE' | 'DISABLED' | `TS_${TimesheetStatus}`;
+export type PillStatus = LeaveStatus | 'ACTIVE' | 'DISABLED' | `TS_${TimesheetStatus}` | `EV_${EvaluationStatus}` | `CY_${CycleStatus}`;
 
 const EXTRA_LABELS = { ACTIVE: 'Activ', DISABLED: 'Dezactivat' } as const;
 
@@ -17,6 +18,12 @@ const VARIANTS: Record<PillStatus, { tone: string; shape: Shape }> = {
   TS_SUBMITTED: { tone: 'warning', shape: 'diamond' },
   TS_APPROVED: { tone: 'success', shape: 'circle' },
   TS_REJECTED: { tone: 'danger', shape: 'square' },
+  EV_PENDING_SELF: { tone: 'warning', shape: 'diamond' },
+  EV_PENDING_MANAGER: { tone: 'warning', shape: 'diamond' },
+  EV_COMPLETED: { tone: 'success', shape: 'circle' },
+  CY_DRAFT: { tone: 'neutral', shape: 'ring' },
+  CY_OPEN: { tone: 'success', shape: 'circle' },
+  CY_CLOSED: { tone: 'neutral', shape: 'square' },
   APPROVED: { tone: 'success', shape: 'circle' },
   PENDING: { tone: 'warning', shape: 'diamond' },
   REJECTED: { tone: 'danger', shape: 'square' },
@@ -61,6 +68,12 @@ export class StatusPill {
     const s = this.status();
     if (s === 'ACTIVE' || s === 'DISABLED') {
       return this.feminine() ? FEMININE_LABELS[s] : EXTRA_LABELS[s];
+    }
+    if (s.startsWith('EV_')) {
+      return EVALUATION_STATUS_LABELS[s.slice(3) as EvaluationStatus];
+    }
+    if (s.startsWith('CY_')) {
+      return CYCLE_STATUS_LABELS[s.slice(3) as CycleStatus];
     }
     if (s.startsWith('TS_')) {
       return TIMESHEET_STATUS_LABELS[s.slice(3) as TimesheetStatus];
