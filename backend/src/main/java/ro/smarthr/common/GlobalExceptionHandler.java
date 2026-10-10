@@ -51,9 +51,25 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     /** Încălcare de constrângere unică (ex: cursă la creare); mesajul excepției poate conține date, nu se ecoizează. */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Object> handleIntegrity(DataIntegrityViolationException ex) {
+        if (!isUniqueViolation(ex)) {
+            return handleGeneric(ex);
+        }
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Conflict cu datele existente.");
         pd.setTitle(HttpStatus.CONFLICT.getReasonPhrase());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
+    }
+
+    /** SQLState 23505 = unique_violation; doar acestea sunt 409. */
+    private static boolean isUniqueViolation(Throwable ex) {
+        for (Throwable t = ex; t != null; t = t.getCause()) {
+            if (t instanceof java.sql.SQLException sql && "23505".equals(sql.getSQLState())) {
+                return true;
+            }
+            if (t.getCause() == t) {
+                break;
+            }
+        }
+        return false;
     }
 
     @ExceptionHandler(Exception.class)
