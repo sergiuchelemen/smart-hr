@@ -50,7 +50,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     /**
      * Încălcări de constrângeri DB, mapate după SQLState; mesajele sunt constante (fără detalii despre
-     * constrângeri sau date). 23505/23P01/23503 => 409, 23514 => 400; restul rămân 500.
+     * constrângeri sau date). 23P01 => 409 cu mesajul de suprapunere, 23505/23503 => 409, 23514 => 400; restul rămân 500.
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Object> handleIntegrity(DataIntegrityViolationException ex) {
@@ -59,7 +59,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             return handleGeneric(ex);
         }
         switch (state) {
-            case "23505", "23P01", "23503" -> {
+            case "23P01" -> {
+                ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, Messages.LEAVE_OVERLAP);
+                pd.setTitle(HttpStatus.CONFLICT.getReasonPhrase());
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
+            }
+            case "23505", "23503" -> {
                 ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
                     "Conflict cu datele existente.");
                 pd.setTitle(HttpStatus.CONFLICT.getReasonPhrase());
@@ -72,6 +77,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 return handleGeneric(ex);
             }
         }
+    }
+
+    /** Conflict de concurență (lock/versiune): 409 cu mesaj constant. */
+    @ExceptionHandler({org.springframework.dao.PessimisticLockingFailureException.class,
+        org.springframework.orm.ObjectOptimisticLockingFailureException.class})
+    public ResponseEntity<Object> handleConcurrency(Exception ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, Messages.CONCURRENT_UPDATE);
+        pd.setTitle(HttpStatus.CONFLICT.getReasonPhrase());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
     }
 
     private static String sqlState(Throwable ex) {
@@ -93,10 +107,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(pd);
     }
 
-    /** Se loghează doar clasa excepției + errorId, nu mesajul (poate conține date personale). */
+    /** Se loghează doar clasa excepției + errorId + SQLState (cod de 5 caractere), nu mesajul (poate conține date personale). */
     private static void logServerError(Exception ex, ProblemDetail pd) {
         String errorId = UUID.randomUUID().toString();
-        log.error("Eroare neașteptată [errorId={}]: {}", errorId, ex.getClass().getName());
+        String state = sqlState(ex);
+        if (state != null) {
+            log.error("Eroare neașteptată [errorId={}]: {} (sqlState={})", errorId, ex.getClass().getName(), state);
+        } else {
+            log.error("Eroare neașteptată [errorId={}]: {}", errorId, ex.getClass().getName());
+        }
         pd.setProperty("errorId", errorId);
     }
 
