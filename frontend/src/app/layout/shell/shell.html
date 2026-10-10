@@ -61,6 +61,11 @@
           <i class="pi pi-table" aria-hidden="true"></i><span>Pontaj echipă</span>
         </a>
       </li>
+      <li>
+        <a routerLink="/documente" routerLinkActive="active" (click)="drawerOpen.set(false)">
+          <i class="pi pi-file" aria-hidden="true"></i><span>Documente</span>
+        </a>
+      </li>
       <li *appHasPermission="'EMPLOYEE_READ'">
         <a routerLink="/angajati" routerLinkActive="active" (click)="drawerOpen.set(false)">
           <i class="pi pi-users" aria-hidden="true"></i><span>Angajați</span>
