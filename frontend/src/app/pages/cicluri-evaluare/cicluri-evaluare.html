@@ -1,0 +1,99 @@
+<header class="head">
+  <div>
+    <h1 class="t-title">Cicluri de evaluare</h1>
+    <p class="t-muted">Creează, deschide și închide ciclurile de evaluare a performanței.</p>
+  </div>
+  <p-button #newBtn label="Ciclu nou" icon="pi pi-plus" (onClick)="openForm(null, $event)" />
+</header>
+
+@if (actionError()) {
+  <div class="msg"><p-message severity="error" role="alert">{{ actionError() }}</p-message></div>
+}
+
+@if (pending(); as c) {
+  <section class="panel confirm" role="alert" aria-labelledby="confirm-titlu">
+    <h2 class="t-heading" id="confirm-titlu">
+      {{ c.action === 'open' ? 'Deschizi ciclul' : 'Închizi ciclul' }} {{ c.cycle.name }}?
+    </h2>
+    <p class="t-muted">{{ confirmText() }}</p>
+    <div class="actions">
+      <p-button label="Renunță" severity="secondary" [text]="true" [disabled]="busy()" (onClick)="pending.set(null)" />
+      <p-button [label]="c.action === 'open' ? 'Deschide ciclul' : 'Închide ciclul'" severity="secondary"
+                [outlined]="true" [loading]="busy()" (onClick)="run()" />
+    </div>
+  </section>
+}
+
+@if (state() === 'error') {
+  <section class="panel state" role="alert">
+    <h2 class="t-heading">Nu am putut încărca ciclurile</h2>
+    <p class="t-muted">{{ errorMessage() }}</p>
+    <div><p-button label="Încearcă din nou" severity="secondary" [outlined]="true" (onClick)="load()" /></div>
+  </section>
+} @else if (firstLoad()) {
+  <section class="panel table-wrap" aria-busy="true" aria-label="Se încarcă ciclurile">
+    <div class="skel-head"></div>
+    @for (r of skeletonRows; track r) {
+      <div class="skel-row">
+        <p-skeleton width="70%" height="16px" />
+        <p-skeleton width="60%" height="16px" />
+        <p-skeleton width="50%" height="24px" borderRadius="999px" />
+        <p-skeleton width="40%" height="16px" />
+      </div>
+    }
+  </section>
+} @else if (state() === 'ready' && total() === 0) {
+  <section class="panel state">
+    <p class="t-heading">Nu există cicluri de evaluare.</p>
+    <p class="t-muted">Creează primul ciclu cu butonul „Ciclu nou".</p>
+  </section>
+} @else {
+  <section class="panel table-wrap" [class.busy]="state() === 'loading'" [attr.aria-busy]="state() === 'loading'">
+    <p-table [value]="items()" [lazy]="true" [lazyLoadOnInit]="false" (onLazyLoad)="onLazy($event)"
+             [paginator]="true" [rows]="size()" [first]="first()" [totalRecords]="total()"
+             [rowsPerPageOptions]="[10, 20, 50]" dataKey="id"
+             currentPageReportTemplate="{first} - {last} din {totalRecords}" [showCurrentPageReport]="true"
+             [tableStyle]="{ 'min-width': '44rem' }">
+      <ng-template #header>
+        <tr>
+          <th scope="col">Nume</th>
+          <th scope="col">Perioadă</th>
+          <th scope="col">Stare</th>
+          <th scope="col">Acțiuni</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-r>
+        <tr>
+          <td>{{ r.name }}</td>
+          <td>{{ period(r) }}</td>
+          <td><app-status-pill [status]="pill(r.status)" /></td>
+          <td>
+            <div class="row-actions">
+              @if (r.status === 'DRAFT') {
+                <p-button class="row-action" label="Editează" size="small" severity="secondary" [outlined]="true"
+                          [ariaLabel]="'Editează ciclul ' + r.name" (onClick)="openForm(r, $event)" />
+                <p-button class="row-action" label="Deschide" size="small" severity="secondary" [outlined]="true"
+                          [ariaLabel]="'Deschide ciclul ' + r.name" (onClick)="ask(r, 'open')" />
+              }
+              @if (r.status === 'OPEN') {
+                <p-button class="row-action" label="Închide" size="small" severity="secondary" [outlined]="true"
+                          [ariaLabel]="'Închide ciclul ' + r.name" (onClick)="ask(r, 'close')" />
+              }
+              @if (r.status !== 'DRAFT') {
+                <p-button class="row-action" label="Progres" size="small" severity="secondary" [outlined]="true"
+                          [ariaLabel]="'Progresul ciclului ' + r.name" (onClick)="openProgress(r, $event)" />
+              }
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </section>
+}
+
+@if (formOpen()) {
+  <app-ciclu-dialog [cycle]="editing()" (saved)="onSaved()" (closed)="closeForm()" />
+}
+@if (progressFor(); as p) {
+  <app-progres-dialog [cycle]="p" (closed)="closeProgress()" />
+}
