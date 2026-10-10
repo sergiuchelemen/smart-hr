@@ -1,0 +1,118 @@
+<header class="head">
+  <div>
+    <h1 class="t-title" tabindex="-1">Roluri și privilegii</h1>
+    <p class="t-muted">Rolurile grupează privilegiile pe care le primesc utilizatorii.</p>
+  </div>
+  <p-button data-key="nou" label="Rol nou" icon="pi pi-plus" (onClick)="open({ kind: 'form', role: null }, 'nou')" />
+</header>
+
+<p class="sr-only" aria-live="polite">
+  @if (status() === 'loading') { Se încarcă rolurile. }
+</p>
+
+@if (status() === 'error') {
+  <section class="panel state" role="alert">
+    <h2 class="t-heading">Nu am putut încărca rolurile</h2>
+    <p class="t-muted">{{ errorMessage() }}</p>
+    <div>
+      <p-button label="Încearcă din nou" severity="secondary" [outlined]="true" (onClick)="load()" />
+    </div>
+  </section>
+} @else if (firstLoad()) {
+  <section class="panel table-wrap" aria-busy="true" aria-label="Se încarcă rolurile">
+    <div class="skel-head"></div>
+    @for (r of skeletonRows; track r) {
+      <div class="skel-row">
+        <p-skeleton width="2rem" height="24px" />
+        <p-skeleton width="65%" height="16px" />
+        <p-skeleton width="30%" height="16px" />
+        <p-skeleton width="30%" height="16px" />
+        <p-skeleton width="60%" height="16px" />
+      </div>
+    }
+  </section>
+} @else if (roles().length === 0) {
+  <section class="panel state">
+    <p class="t-heading">Nu există roluri.</p>
+    <p class="t-muted">Creează primul rol cu butonul „Rol nou”, apoi atribuie-l utilizatorilor.</p>
+  </section>
+} @else {
+  <section class="panel table-wrap" [class.busy]="status() === 'loading'" [attr.aria-busy]="status() === 'loading'">
+    <p-table [value]="roles()" dataKey="id" [expandedRowKeys]="expanded()" [tableStyle]="{ 'min-width': '44rem' }">
+      <ng-template #header>
+        <tr>
+          <th scope="col" class="narrow"><span class="sr-only">Detalii</span></th>
+          <th scope="col">Nume</th>
+          <th scope="col">Utilizatori</th>
+          <th scope="col">Privilegii</th>
+          <th scope="col">Acțiuni</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-r let-isExpanded="expanded">
+        <tr>
+          <td class="narrow">
+            <p-button class="row-action" [icon]="isExpanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                      [text]="true" severity="secondary" [rounded]="true"
+                      [ariaLabel]="(isExpanded ? 'Ascunde' : 'Arată') + ' privilegiile rolului ' + r.name"
+                      (onClick)="toggle(r.id)" />
+          </td>
+          <td>
+            {{ r.name }}
+            @if (r.system) {
+              <span class="chip">Sistem</span>
+            }
+          </td>
+          <td class="num">{{ r.userCount }}</td>
+          <td class="num">{{ r.permissions.length }}</td>
+          <td>
+            @let editWhy = editReason(r);
+            @let deleteWhy = deleteReason(r);
+            <div class="actions">
+              <p-button class="row-action" [attr.data-key]="'edit-' + r.id" label="Editează" size="small"
+                        severity="secondary" [outlined]="true" [disabled]="editWhy !== null"
+                        [ariaLabel]="'Editează rolul ' + r.name + (editWhy ? '. Indisponibil: ' + editWhy : '')"
+                        (onClick)="open({ kind: 'form', role: r }, 'edit-' + r.id)" />
+              <p-button class="row-action" [attr.data-key]="'del-' + r.id" label="Șterge" size="small"
+                        severity="secondary" [outlined]="true" [disabled]="deleteWhy !== null"
+                        [ariaLabel]="'Șterge rolul ' + r.name + (deleteWhy ? '. Indisponibil: ' + deleteWhy : '')"
+                        (onClick)="open({ kind: 'delete', role: r }, 'del-' + r.id)" />
+            </div>
+            @if (deleteWhy) {
+              <p class="t-body-sm t-muted why">{{ deleteWhy }}</p>
+            }
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #expandedrow let-r>
+        <tr>
+          <td></td>
+          <td colspan="4">
+            @if (r.permissions.length) {
+              <ul class="perm-list" [attr.aria-label]="'Privilegiile rolului ' + r.name">
+                @for (code of r.permissions; track code) {
+                  <li>
+                    <span>{{ describe(code) }}</span>
+                    <span class="code t-muted">{{ code }}</span>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="t-muted">Rolul nu are niciun privilegiu. Adaugă privilegii cu „Editează”.</p>
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </section>
+}
+
+@if (dialog(); as d) {
+  @switch (d.kind) {
+    @case ('form') {
+      <app-role-dialog [role]="d.role" [catalog]="catalog()" (closed)="onClosed($event)" />
+    }
+    @case ('delete') {
+      <app-role-delete-dialog [role]="d.role" (closed)="onClosed($event)" />
+    }
+  }
+}
