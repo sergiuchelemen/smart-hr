@@ -147,7 +147,7 @@ public class TenantMongoOperations {
     public <T extends TenantScoped, R> List<R> aggregate(Class<T> inputType, Class<R> outputType,
                                                          AggregationOperation... operations) {
         for (AggregationOperation op : operations) {
-            for (Document stage : op.toDocuments(Aggregation.DEFAULT_CONTEXT)) {
+            for (Document stage : op.toPipelineStages(Aggregation.DEFAULT_CONTEXT)) {
                 if (stage.keySet().stream().anyMatch(FORBIDDEN_STAGES::contains)) {
                     throw new IllegalArgumentException("Etapă de agregare nepermisă");
                 }
