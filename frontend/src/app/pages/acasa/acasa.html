@@ -1,0 +1,181 @@
+<header class="head">
+  <div>
+    <h1 class="greet">{{ firstName() ? 'Bună, ' + firstName() : 'Bun venit' }}</h1>
+    <p class="t-body-sm t-muted date">{{ dateText }}</p>
+  </div>
+  @if (company()) {
+    <p class="t-body-sm t-muted company">{{ company() }}</p>
+  }
+</header>
+
+@switch (state()) {
+  @case ('loading') {
+    <div class="attn" aria-hidden="true">
+      <p-skeleton width="13rem" height="52px" borderRadius="999px" />
+      <p-skeleton width="11rem" height="52px" borderRadius="999px" />
+    </div>
+    <div class="grid" role="status" aria-label="Se încarcă">
+      <div class="s5"><p-skeleton height="260px" borderRadius="18px" /></div>
+      <div class="s7"><p-skeleton height="260px" borderRadius="18px" /></div>
+      <div class="s7"><p-skeleton height="260px" borderRadius="18px" /></div>
+      <div class="s5"><p-skeleton height="260px" borderRadius="18px" /></div>
+    </div>
+  }
+  @case ('error') {
+    <div class="panel state" role="alert">
+      <p class="t-heading">Nu am putut încărca pagina de start</p>
+      <p class="t-muted">Verifică conexiunea și încearcă din nou.</p>
+      <p-button label="Încearcă din nou" severity="secondary" [outlined]="true" (onClick)="load()" />
+    </div>
+  }
+  @case ('ready') {
+    @if (checkedApprovals() || attention().length) {
+      <section class="attn" aria-label="Ce cere atenția">
+        @for (a of attention(); track a.key) {
+          <a class="attn-card" [routerLink]="a.link" [style.--i]="$index">
+            @if (a.count !== null) {
+              <span class="count num">{{ a.count }}</span>
+            } @else {
+              <span class="dot" aria-hidden="true"></span>
+            }
+            <span class="attn-label">{{ a.label }}</span>
+          </a>
+        } @empty {
+          <p class="attn-card calm"><span class="dot ok" aria-hidden="true"></span>Nimic de aprobat. Ai terminat.</p>
+        }
+      </section>
+    }
+
+    <div class="grid">
+      @if (leave(); as l) {
+        <section class="panel card s5" style="--i: 1" aria-labelledby="h-leave">
+          <div class="card-head">
+            <h2 id="h-leave" class="t-heading">Soldul de concediu</h2>
+            <a routerLink="/concedii" class="t-body-sm more">Detalii</a>
+          </div>
+          <div class="leave">
+            <app-donut-gauge [segments]="l.segments" [total]="l.total" [centerValue]="'' + l.available" centerLabel="zile rămase" [description]="l.description" />
+            <dl class="legend">
+              <div><dt><i class="sw used"></i>Folosite</dt><dd class="num">{{ l.used }}</dd></div>
+              <div><dt><i class="sw pend"></i>În așteptare</dt><dd class="num">{{ l.pending }}</dd></div>
+              <div><dt><i class="sw avail"></i>Disponibile</dt><dd class="num">{{ l.available }}</dd></div>
+              <div class="total"><dt>Total pe an</dt><dd class="num">{{ l.total }}</dd></div>
+            </dl>
+          </div>
+          <p class="t-body-sm foot">
+            @if (l.nextText) {
+              <span class="t-muted">Următorul concediu:</span> <strong class="num">{{ l.nextText }}</strong>
+            } @else {
+              <span class="t-muted">Niciun concediu aprobat în perioada următoare.</span>
+            }
+          </p>
+        </section>
+      }
+
+      @if (sheet(); as s) {
+        <section class="panel card s7" style="--i: 2" aria-labelledby="h-ts">
+          <div class="card-head">
+            <h2 id="h-ts" class="t-heading">Pontajul lunii</h2>
+            <app-status-pill [status]="s.pill" />
+          </div>
+          <p class="t-body-sm t-muted cap">{{ s.label }}</p>
+          <p class="hours num"><span class="big">{{ s.worked }}</span> <span class="t-muted">din {{ s.norm }}</span></p>
+          <div class="meter" role="img" [attr.aria-label]="'Ore lucrate: ' + s.worked + ' din ' + s.norm">
+            <span class="meter-fill" [style.width.%]="s.pct"></span>
+          </div>
+          <a routerLink="/pontaj" class="t-body-sm more">Deschide pontajul</a>
+        </section>
+      }
+
+      @if (absences(); as a) {
+        <section class="panel card s7" style="--i: 3" aria-labelledby="h-abs">
+          <div class="card-head">
+            <h2 id="h-abs" class="t-heading">Cine lipsește săptămâna aceasta</h2>
+            <span class="chip" [class.chip-brand]="a.today > 0">Azi lipsesc {{ a.today }} {{ a.today === 1 ? 'persoană' : 'persoane' }}</span>
+          </div>
+          @if (a.items.length) {
+            <app-week-strip [items]="a.items" [today]="today" [description]="a.description" />
+          } @else {
+            <p class="t-muted">Nimeni nu e în concediu săptămâna aceasta.</p>
+          }
+        </section>
+      }
+
+      @if (headcount(); as h) {
+        <section class="panel card s5" style="--i: 4" aria-labelledby="h-hc">
+          <h2 id="h-hc" class="t-heading">Angajați pe departamente</h2>
+          <div class="kpis">
+            <div><p class="kpi num">{{ h.total }}</p><p class="t-body-sm t-muted">Angajați activi</p></div>
+            <div><p class="kpi num">{{ h.hired }}</p><p class="t-body-sm t-muted">Angajări în ultimele 90 de zile</p></div>
+          </div>
+          @if (h.bars.length) {
+            <app-bar-list [items]="h.bars" />
+          } @else {
+            <p class="t-muted">Nu există încă departamente cu angajați.</p>
+          }
+        </section>
+      }
+
+      @if (byMonth(); as m) {
+        <section class="panel card s7" style="--i: 5" aria-labelledby="h-bm">
+          <div class="card-head">
+            <h2 id="h-bm" class="t-heading">Concedii pe luni, {{ year }}</h2>
+            <span class="t-body-sm t-muted num">{{ m.total }} zile în total</span>
+          </div>
+          <app-month-bars [data]="m.data" [currentMonth]="month" [description]="m.description" />
+        </section>
+      }
+
+      @if (hasHolidays()) {
+        <section class="panel card s5" style="--i: 6" aria-labelledby="h-hol">
+          <h2 id="h-hol" class="t-heading">Următoarele zile libere legale</h2>
+          <ul class="plain">
+            @for (h of holidays(); track h.name + h.day + h.mon) {
+              <li class="hol">
+                <span class="date-tile num"><b>{{ h.day }}</b><small>{{ h.mon }}</small></span>
+                <span>{{ h.name }}</span>
+              </li>
+            } @empty {
+              <li class="t-muted">Nu sunt zile libere legale în perioada următoare.</li>
+            }
+          </ul>
+        </section>
+      }
+
+      @if (hasDocs()) {
+        <section class="panel card s7" style="--i: 7" aria-labelledby="h-doc">
+          <div class="card-head">
+            <h2 id="h-doc" class="t-heading">Documente recente</h2>
+            <a routerLink="/documente" class="t-body-sm more">Toate documentele</a>
+          </div>
+          <ul class="plain">
+            @for (d of docs(); track d.id) {
+              <li>
+                <a routerLink="/documente" class="doc">
+                  <span class="doc-title">{{ d.title }}</span>
+                  <span class="t-body-sm t-muted">{{ d.category }} &middot; <span class="num">{{ d.date }}</span></span>
+                </a>
+              </li>
+            } @empty {
+              <li class="t-muted">Nu există documente încă.</li>
+            }
+          </ul>
+        </section>
+      }
+    </div>
+
+    <nav class="quick" aria-label="Acțiuni rapide">
+      <span class="t-label t-muted">Acțiuni rapide</span>
+      <a *appHasPermission="'LEAVE_REQUEST'" routerLink="/concedii" class="chip q">Concedii</a>
+      <a *appHasPermission="['LEAVE_APPROVE', 'LEAVE_APPROVE_ALL']; mode: 'any'" routerLink="/aprobari" class="chip q">Aprobări</a>
+      <a *appHasPermission="'TIMESHEET_SUBMIT'" routerLink="/pontaj" class="chip q">Pontaj</a>
+      <a *appHasPermission="'EVALUATION_SELF'" routerLink="/evaluarile-mele" class="chip q">Evaluările mele</a>
+      <a routerLink="/documente" class="chip q">Documente</a>
+      <a *appHasPermission="'EMPLOYEE_READ'" routerLink="/angajati" class="chip q">Angajați</a>
+    </nav>
+
+    @if (!auth.permissions().length) {
+      <p class="panel state t-muted">Contul tău nu are încă nicio secțiune disponibilă. Cere acces administratorului companiei.</p>
+    }
+  }
+}
