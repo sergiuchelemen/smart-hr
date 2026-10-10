@@ -79,7 +79,8 @@ public class LeaveService {
         }
         String note = r.note() == null || r.note().isBlank() ? null : r.note().trim();
         // Suprapunerea concurentă e prinsă de constrângerea de excludere (23P01 => 409 în GlobalExceptionHandler).
-        LeaveRequest saved = requests.saveAndFlush(new LeaveRequest(me.getId(), r.type(), start, end, days, note));
+        LeaveRequest saved = requests.saveAndFlush(new LeaveRequest(me.getId(), r.type(), start, end, days, note,
+            caller.userId()));
         return toResponses(List.of(saved)).get(0);
     }
 
@@ -130,6 +131,9 @@ public class LeaveService {
             throw notFound();
         }
         if (me.isPresent() && me.get().getId().equals(owner.getId())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, Messages.FORBIDDEN);
+        }
+        if (caller.userId().equals(req.getRequestedByUserId())) {
             throw new ApiException(HttpStatus.FORBIDDEN, Messages.FORBIDDEN);
         }
         boolean allowed = caller.permissions().contains("LEAVE_APPROVE_ALL")
