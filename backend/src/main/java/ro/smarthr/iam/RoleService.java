@@ -8,16 +8,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ro.smarthr.common.ApiException;
+import ro.smarthr.common.Messages;
 
 @Service
 public class RoleService {
 
     private final RoleRepository roles;
     private final PermissionRepository permissions;
+    private final CurrentUserPrivileges currentUser;
 
-    public RoleService(RoleRepository roles, PermissionRepository permissions) {
+    public RoleService(RoleRepository roles, PermissionRepository permissions, CurrentUserPrivileges currentUser) {
         this.roles = roles;
         this.permissions = permissions;
+        this.currentUser = currentUser;
     }
 
     @Transactional(readOnly = true)
@@ -29,6 +32,7 @@ public class RoleService {
     @Transactional
     public RoleController.RoleResponse create(String name, List<String> permissionCodes) {
         Set<String> codes = validate(permissionCodes);
+        requireIncluded(codes, currentUser.load().permissions());
         if (roles.existsByName(name)) {
             throw new ApiException(HttpStatus.CONFLICT, "Există deja un rol cu acest nume.");
         }
@@ -42,9 +46,21 @@ public class RoleService {
         if (role.isSystem()) {
             throw new ApiException(HttpStatus.FORBIDDEN, "Rolurile de sistem nu pot fi modificate.");
         }
+        CurrentUserPrivileges.Caller caller = currentUser.load();
+        // Apelantul nu își poate modifica propriile roluri și nu poate acorda ce nu deține.
+        if (caller.roleIds().contains(role.getId())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, Messages.FORBIDDEN);
+        }
+        requireIncluded(codes, caller.permissions());
         role.getPermissions().clear();
         role.getPermissions().addAll(codes);
         return RoleController.RoleResponse.from(roles.saveAndFlush(role));
+    }
+
+    private static void requireIncluded(Set<String> codes, Set<String> callerPerms) {
+        if (!callerPerms.containsAll(codes)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, Messages.FORBIDDEN);
+        }
     }
 
     private Set<String> validate(List<String> codes) {
