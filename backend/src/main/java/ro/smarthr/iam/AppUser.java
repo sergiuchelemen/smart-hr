@@ -80,7 +80,11 @@ public class AppUser {
         return sessionVersion;
     }
 
+    /** Dezactivarea invalidează tokenurile existente (session_version), ca la reactivare să nu reînvie. */
     public void setEnabled(boolean enabled) {
+        if (this.enabled && !enabled) {
+            this.sessionVersion++;
+        }
         this.enabled = enabled;
     }
 

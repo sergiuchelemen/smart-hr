@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ro.smarthr.common.ApiException;
 import ro.smarthr.common.Emails;
+import ro.smarthr.common.Messages;
 import ro.smarthr.iam.AppUser;
 import ro.smarthr.iam.Permission;
 import ro.smarthr.iam.PermissionRepository;
@@ -33,7 +34,7 @@ public class CompanyProvisioningService {
 
     public Company createCompany(String name, String code, String adminEmail, String adminPassword) {
         if (companies.existsByCode(code)) {
-            throw new ApiException(HttpStatus.CONFLICT, "Codul companiei este deja folosit.");
+            throw new ApiException(HttpStatus.CONFLICT, Messages.COMPANY_CODE_TAKEN);
         }
         UUID companyId = UUID.randomUUID();
         return TenantContext.runAs(companyId,
@@ -62,7 +63,7 @@ public class CompanyProvisioningService {
         public Company provision(UUID companyId, String name, String code, String adminEmail, String adminPassword) {
             Company company = companies.saveAndFlush(new Company(companyId, name, code));
             Set<String> all = permissions.findAll().stream().map(Permission::getCode).collect(Collectors.toSet());
-            Role hrAdmin = roles.save(new Role("HR_ADMIN", true, all));
+            Role hrAdmin = roles.save(new Role(Role.HR_ADMIN, true, all));
             roles.save(new Role("MANAGER", true, Set.of("EMPLOYEE_READ", "LEAVE_REQUEST", "LEAVE_APPROVE")));
             roles.save(new Role("EMPLOYEE", true, Set.of("LEAVE_REQUEST")));
             users.save(new AppUser(adminEmail, encoder.encode(adminPassword), Set.of(hrAdmin)));

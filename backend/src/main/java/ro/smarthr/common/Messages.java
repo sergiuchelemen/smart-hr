@@ -40,13 +40,19 @@ public final class Messages {
 
     public static final String CONCURRENT_UPDATE = "Resursa a fost modificată concurent; reîncearcă.";
 
-    public static final String LAST_ADMIN = "Compania trebuie să păstreze cel puțin un administrator HR activ.";
+    public static final String LAST_ADMIN = "Compania trebuie să păstreze cel puțin un administrator activ.";
 
     public static final String ROLE_IN_USE = "Rolul este atribuit unor utilizatori.";
 
     public static final String ROLE_NAME_TAKEN = "Există deja un rol cu acest nume.";
 
+    public static final String USER_EMAIL_TAKEN = "Există deja un utilizator cu acest email.";
+
+    public static final String COMPANY_CODE_TAKEN = "Codul companiei este deja folosit.";
+
     public static final String SESSION_INVALID = "Sesiune invalidă.";
+
+    public static final String SESSION_INVALID_HEADER = "Invalid session.";
 
     private Messages() {
     }
