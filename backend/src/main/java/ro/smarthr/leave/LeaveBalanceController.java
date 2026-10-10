@@ -3,6 +3,7 @@ package ro.smarthr.leave;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,7 +19,8 @@ public class LeaveBalanceController {
     public record BalanceResponse(int year, int entitled, int carriedOver, int used, long pending, int available) {
     }
 
-    public record BalanceRequest(@Min(0) @Max(100) int entitledDays, @Min(0) @Max(100) int carriedOverDays) {
+    public record BalanceRequest(@NotNull @Min(0) @Max(100) Integer entitledDays,
+                          @NotNull @Min(0) @Max(100) Integer carriedOverDays) {
     }
 
     private final LeaveBalanceService service;
