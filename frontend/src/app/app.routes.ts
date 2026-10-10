@@ -52,6 +52,22 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/aprobari/aprobari').then((m) => m.AprobariPage),
       },
       {
+        path: 'pontaj',
+        canActivate: [permissionGuard],
+        data: { permissions: ['TIMESHEET_SUBMIT'] },
+        loadComponent: () => import('./pages/pontaj/pontaj').then((m) => m.PontajPage),
+      },
+      {
+        path: 'pontaj-echipa',
+        canActivate: [permissionGuard],
+        data: {
+          permissions: ['TIMESHEET_APPROVE', 'TIMESHEET_APPROVE_ALL', 'TIMESHEET_READ_ALL'],
+          permissionsMode: 'any',
+        },
+        loadComponent: () =>
+          import('./pages/pontaj-echipa/pontaj-echipa').then((m) => m.PontajEchipaPage),
+      },
+      {
         path: 'admin/utilizatori',
         canActivate: [permissionGuard],
         data: { permissions: ['USER_READ', 'USER_MANAGE'], permissionsMode: 'any' },

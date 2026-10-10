@@ -31,6 +31,18 @@ import { HasPermissionDirective } from '../../core/auth/has-permission.directive
           <span class="t-body-sm t-muted">Cererile de concediu ale tuturor angajaților.</span>
         </a>
       </li>
+      <li *appHasPermission="'TIMESHEET_SUBMIT'">
+        <a routerLink="/pontaj" class="card panel">
+          <span class="t-heading">Pontaj</span>
+          <span class="t-body-sm t-muted">Completează orele lucrate și trimite luna spre aprobare.</span>
+        </a>
+      </li>
+      <li *appHasPermission="['TIMESHEET_APPROVE', 'TIMESHEET_APPROVE_ALL', 'TIMESHEET_READ_ALL']; mode: 'any'">
+        <a routerLink="/pontaj-echipa" class="card panel">
+          <span class="t-heading">Pontaj echipă</span>
+          <span class="t-body-sm t-muted">Vezi și aprobă pontajele lunare.</span>
+        </a>
+      </li>
       <li *appHasPermission="'EMPLOYEE_READ'">
         <a routerLink="/angajati" class="card panel">
           <span class="t-heading">Angajați</span>
