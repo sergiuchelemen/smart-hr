@@ -5,17 +5,18 @@ import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
+import { Logo } from '../../shared/logo/logo';
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, MessageModule],
+  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, MessageModule, Logo],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <main class="wrap">
       <form class="panel form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <header>
-          <h1 class="t-title">Smart HR</h1>
+          <h1 class="brand"><app-logo [markSize]="48" /></h1>
           <p class="t-muted">Autentifică-te în contul companiei tale.</p>
         </header>
 
@@ -59,7 +60,8 @@ import { AuthService } from '../../core/auth/auth.service';
   styles: `
     .wrap { min-height: 100vh; display: grid; place-items: center; padding: var(--space-4); }
     .form { width: 100%; max-width: 420px; padding: var(--space-6); display: grid; gap: var(--space-4); }
-    header { display: grid; gap: var(--space-1); }
+    header { display: grid; gap: var(--space-3); }
+    .brand { margin: 0; padding: var(--space-3) 0; }
     .field { display: grid; gap: var(--space-1); }
     small { min-height: 20px; font-size: 13px; line-height: 20px; color: var(--ink-muted); }
     small.err { color: var(--danger-ink); }
