@@ -30,7 +30,9 @@ class TimesheetIndexes {
             mongo.ensureIndex(TimesheetPeriod.class, new Index().named("ix_company_status_month")
                 .on("companyId", Direction.ASC).on("status", Direction.ASC).on("month", Direction.ASC));
         } catch (RuntimeException e) {
-            log.warn("Indecșii pontajului nu au putut fi creați: {}", e.getClass().getName());
+            // Upsert-urile se bazează pe indecșii unici: fără ei aplicația nu pornește (se loghează doar clasa).
+            log.error("Indecșii pontajului nu au putut fi creați: {}", e.getClass().getName());
+            throw e;
         }
     }
 }
