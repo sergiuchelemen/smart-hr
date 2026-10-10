@@ -62,7 +62,7 @@ public class CompanyProvisioningService {
         public Company provision(UUID companyId, String name, String code, String adminEmail, String adminPassword) {
             Company company = companies.saveAndFlush(new Company(companyId, name, code));
             Set<String> all = permissions.findAll().stream().map(Permission::getCode).collect(Collectors.toSet());
-            Role hrAdmin = roles.save(new Role("HR_ADMIN", true, all));
+            Role hrAdmin = roles.save(new Role(Role.HR_ADMIN, true, all));
             roles.save(new Role("MANAGER", true, Set.of("EMPLOYEE_READ", "LEAVE_REQUEST", "LEAVE_APPROVE")));
             roles.save(new Role("EMPLOYEE", true, Set.of("LEAVE_REQUEST")));
             users.save(new AppUser(adminEmail, encoder.encode(adminPassword), Set.of(hrAdmin)));

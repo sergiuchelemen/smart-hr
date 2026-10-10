@@ -3,7 +3,10 @@ package ro.smarthr.iam;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.List;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -13,6 +16,18 @@ public interface UserRepository extends JpaRepository<AppUser, UUID> {
     Optional<AppUser> findByEmail(String email);
 
     boolean existsByEmail(String email);
+
+    long countByEnabledTrue();
+
+    /** Useri cu rolurile și privilegiile lor într-o singură interogare (evită N+1 la listare). */
+    @EntityGraph(attributePaths = {"roles", "roles.permissions"})
+    @Query("select distinct u from AppUser u")
+    List<AppUser> findAllWithRoles();
+
+    /** Invalidează toate sesiunile companiei (tenantul curent); apelat la dezactivarea companiei. */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update AppUser u set u.sessionVersion = u.sessionVersion + 1")
+    int bumpAllSessionVersions();
 
     /** Useri activi cu rolul de sistem HR_ADMIN (filtrul de tenant se aplică pe rădăcină; join-ul are condiție explicită). */
     @Query("select count(distinct u) from AppUser u join u.roles r "

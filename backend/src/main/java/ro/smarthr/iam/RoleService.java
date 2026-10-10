@@ -102,7 +102,12 @@ public class RoleService {
     /** Lock pe rândul companiei, apoi reîncărcarea apelantului (privilegiile pot fi schimbat cât s-a așteptat lock-ul). */
     private CurrentUserPrivileges.Caller lockAndReload() {
         companies.findByIdForUpdate(CurrentUserPrivileges.companyIdFromToken()).orElseThrow(RoleService::forbidden);
-        return currentUser.load();
+        CurrentUserPrivileges.Caller caller = currentUser.load();
+        // Privilegiul endpoint-ului se reverifică din valorile proaspete (poate fi retras cât s-a așteptat lock-ul).
+        if (!caller.permissions().contains("ROLE_MANAGE")) {
+            throw forbidden();
+        }
+        return caller;
     }
 
     private Role find(UUID id) {

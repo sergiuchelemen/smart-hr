@@ -40,7 +40,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public List<UserController.UserResponse> list() {
         CurrentUserPrivileges.Caller caller = currentUser.load();
-        return users.findAll().stream().map(u -> toResponse(u, caller))
+        return users.findAllWithRoles().stream().map(u -> toResponse(u, caller))
             .sorted(Comparator.comparing(UserController.UserResponse::email)).toList();
     }
 
@@ -55,7 +55,7 @@ public class UserService {
         // (acoperă și rolurile de sistem, ex. HR_ADMIN).
         found.forEach(r -> requireDominates(caller, r.getPermissions()));
         if (users.existsByEmail(normalized)) {
-            throw new ApiException(HttpStatus.CONFLICT, "Există deja un utilizator cu acest email.");
+            throw new ApiException(HttpStatus.CONFLICT, Messages.USER_EMAIL_TAKEN);
         }
         return toResponse(users.saveAndFlush(new AppUser(normalized, hash, found)), caller);
     }
@@ -106,7 +106,12 @@ public class UserService {
     /** Lock pe rândul companiei, apoi reîncărcarea apelantului (privilegiile pot fi schimbat cât s-a așteptat lock-ul). */
     private CurrentUserPrivileges.Caller lockAndReload() {
         companies.findByIdForUpdate(CurrentUserPrivileges.companyIdFromToken()).orElseThrow(UserService::forbidden);
-        return currentUser.load();
+        CurrentUserPrivileges.Caller caller = currentUser.load();
+        // Privilegiul endpoint-ului se reverifică din valorile proaspete (poate fi retras cât s-a așteptat lock-ul).
+        if (!caller.permissions().contains("USER_MANAGE")) {
+            throw forbidden();
+        }
+        return caller;
     }
 
     private AppUser findTarget(UUID id) {

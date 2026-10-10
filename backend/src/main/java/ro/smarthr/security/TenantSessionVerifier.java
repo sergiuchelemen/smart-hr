@@ -73,7 +73,7 @@ public class TenantSessionVerifier {
     }
 
     private static InvalidBearerTokenException invalid() {
-        return new InvalidBearerTokenException(Messages.SESSION_INVALID);
+        return new InvalidBearerTokenException(Messages.SESSION_INVALID_HEADER);
     }
 
     @Service
