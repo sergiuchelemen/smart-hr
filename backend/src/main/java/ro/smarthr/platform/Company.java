@@ -21,6 +21,9 @@ public class Company {
     @Column(name = "code", nullable = false, unique = true)
     private String code;
 
+    @Column(name = "enabled", nullable = false)
+    private boolean enabled = true;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -44,6 +47,10 @@ public class Company {
 
     public String getCode() {
         return code;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
     }
 
     public Instant getCreatedAt() {

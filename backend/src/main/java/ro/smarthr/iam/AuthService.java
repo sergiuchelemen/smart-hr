@@ -17,7 +17,7 @@ import ro.smarthr.tenancy.TenantContext;
 public class AuthService {
 
     /** Rezultatul verificării în interiorul tranzacției (fără entități lazy în afara sesiunii). */
-    record Verified(UUID userId, List<String> permissions) {
+    record Verified(UUID userId, List<String> permissions, int sessionVersion) {
     }
 
     private final CompanyRepository companies;
@@ -45,11 +45,12 @@ public class AuthService {
         if (company == null) {
             encoder.matches(password, dummyHash); // egalizare de timp: exact un matches pe fiecare drum
         }
-        if (verified == null) {
+        // Compania dezactivată: același răspuns generic (verify a rulat deja, deci același cost).
+        if (verified == null || !company.isEnabled()) {
             throw new BadCredentialsException(Messages.BAD_CREDENTIALS);
         }
         return TokenResponse.bearer(
-            jwt.issueTenantToken(verified.userId(), company.getId(), verified.permissions()),
+            jwt.issueTenantToken(verified.userId(), company.getId(), verified.permissions(), verified.sessionVersion()),
             JwtService.TTL.toSeconds());
     }
 
@@ -77,7 +78,7 @@ public class AuthService {
             List<String> perms = user.getRoles().stream()
                 .flatMap(r -> r.getPermissions().stream())
                 .distinct().sorted().toList();
-            return new Verified(user.getId(), perms);
+            return new Verified(user.getId(), perms, user.getSessionVersion());
         }
     }
 }

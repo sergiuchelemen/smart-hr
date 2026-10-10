@@ -35,6 +35,9 @@ public class AppUser {
     @Column(name = "enabled", nullable = false)
     private boolean enabled = true;
 
+    @Column(name = "session_version", nullable = false)
+    private int sessionVersion;
+
     @ManyToMany
     @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"),
         inverseJoinColumns = @JoinColumn(name = "role_id"))
@@ -71,5 +74,24 @@ public class AppUser {
 
     public Set<Role> getRoles() {
         return roles;
+    }
+
+    public int getSessionVersion() {
+        return sessionVersion;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    /** Schimbarea parolei invalidează tokenurile emise anterior (session_version). */
+    public void changePassword(String newPasswordHash) {
+        this.passwordHash = newPasswordHash;
+        this.sessionVersion++;
+    }
+
+    public void replaceRoles(Set<Role> newRoles) {
+        this.roles.clear();
+        this.roles.addAll(newRoles);
     }
 }

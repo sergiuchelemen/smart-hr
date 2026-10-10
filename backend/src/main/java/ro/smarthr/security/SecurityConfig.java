@@ -2,9 +2,6 @@ package ro.smarthr.security;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -16,8 +13,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
@@ -39,7 +34,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, TenantSessionVerifier verifier) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -49,24 +44,14 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated())
-            .oauth2ResourceServer(o -> o.jwt(j -> j.jwtAuthenticationConverter(jwtAuthenticationConverter())));
+            .oauth2ResourceServer(o -> o.jwt(j -> j.jwtAuthenticationConverter(jwtAuthenticationConverter(verifier))));
         return http.build();
     }
 
-    /** perms => PERM_<cod>; typ=platform => ROLE_PLATFORM_ADMIN. */
-    private JwtAuthenticationConverter jwtAuthenticationConverter() {
+    /** Verificare de sesiune la fiecare request; autoritățile (PERM_*, ROLE_PLATFORM_ADMIN) vin din DB, nu din token. */
+    private JwtAuthenticationConverter jwtAuthenticationConverter(TenantSessionVerifier verifier) {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
-            Collection<GrantedAuthority> authorities = new ArrayList<>();
-            List<String> perms = jwt.getClaimAsStringList("perms");
-            if (perms != null) {
-                perms.forEach(p -> authorities.add(new SimpleGrantedAuthority("PERM_" + p)));
-            }
-            if ("platform".equals(jwt.getClaimAsString("typ"))) {
-                authorities.add(new SimpleGrantedAuthority("ROLE_PLATFORM_ADMIN"));
-            }
-            return authorities;
-        });
+        converter.setJwtGrantedAuthoritiesConverter(verifier::authorities);
         return converter;
     }
 
