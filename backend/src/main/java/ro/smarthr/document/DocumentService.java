@@ -154,7 +154,7 @@ public class DocumentService {
         LibraryDocument d = new LibraryDocument();
         d.setId(UUID.randomUUID());
         applyMeta(d, title, description, category, visibility);
-        d.setFileName(DocumentContentValidator.sanitizeName(file.getOriginalFilename()));
+        d.setFileName(sanitizedName(file, type));
         d.setContentType(type);
         d.setSizeBytes(bytes.length);
         d.setVersion(1);
@@ -195,12 +195,13 @@ public class DocumentService {
         UUID uid = parseId(id);
         byte[] bytes = readBytes(file);
         String type = DocumentContentValidator.detect(bytes);
+        String fileName = sanitizedName(file, type);
         anyDoc(uid);
         DocumentFile old = mongo.findOne(DocumentFile.class, Criteria.where("_id").is(uid));
         mongo.findAndModify(DocumentFile.class, Criteria.where("_id").is(uid), new Update().set("content", bytes),
             false, true);
         try {
-            Update u = new Update().set("fileName", DocumentContentValidator.sanitizeName(file.getOriginalFilename()))
+            Update u = new Update().set("fileName", fileName)
                 .set("contentType", type).set("sizeBytes", (long) bytes.length).inc("version", 1)
                 .set("updatedAt", Instant.now());
             LibraryDocument d = mongo.findAndModify(LibraryDocument.class, Criteria.where("_id").is(uid), u, true, false);
@@ -226,6 +227,12 @@ public class DocumentService {
             throw notFound();
         }
         mongo.delete(DocumentFile.class, Criteria.where("_id").is(uid));
+    }
+
+    private static String sanitizedName(MultipartFile file, String type) {
+        String name = DocumentContentValidator.sanitizeName(file.getOriginalFilename());
+        DocumentContentValidator.checkExtension(name, type);
+        return name;
     }
 
     private void applyMeta(LibraryDocument d, String title, String description, String category,

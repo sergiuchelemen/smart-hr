@@ -51,6 +51,16 @@ final class DocumentContentValidator {
         return true;
     }
 
+    /** Extensia (.pdf / .txt) trebuie să corespundă tipului detectat din conținut. */
+    static void checkExtension(String sanitizedName, String detectedType) {
+        String lower = sanitizedName.toLowerCase(java.util.Locale.ROOT);
+        boolean ok = (lower.endsWith(".pdf") && PDF.equals(detectedType))
+            || (lower.endsWith(".txt") && TXT.equals(detectedType));
+        if (!ok) {
+            throw invalid();
+        }
+    }
+
     static String sanitizeName(String original) {
         String n = original == null ? "" : original;
         int cut = Math.max(n.lastIndexOf('/'), n.lastIndexOf('\\'));
@@ -60,7 +70,10 @@ final class DocumentContentValidator {
             && Character.isDefined(cp)).forEach(sb::appendCodePoint);
         n = sb.toString().trim();
         if (n.codePointCount(0, n.length()) > 150) {
-            n = n.substring(0, n.offsetByCodePoints(0, 150)).trim();
+            int dot = n.lastIndexOf('.');
+            String ext = dot >= 0 && n.length() - dot <= 5 ? n.substring(dot) : "";
+            String base = n.substring(0, dot >= 0 && !ext.isEmpty() ? dot : n.length());
+            n = base.substring(0, base.offsetByCodePoints(0, 150 - ext.length())).trim() + ext;
         }
         return n.isEmpty() || n.equals(".") || n.equals("..") ? "document" : n;
     }

@@ -4,11 +4,11 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.http.CacheControl;
-import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -87,11 +87,12 @@ public class DocumentController {
     }
 
     private static ResponseEntity<byte[]> file(DocumentService.Content c, boolean attachment) {
-        ContentDisposition cd = (attachment ? ContentDisposition.attachment() : ContentDisposition.inline())
-            .filename(c.fileName(), StandardCharsets.UTF_8).build();
+        String encoded = URLEncoder.encode(c.fileName(), StandardCharsets.UTF_8).replace("+", "%20")
+            .replace("*", "%2A").replace("'", "%27").replace("(", "%28").replace(")", "%29");
+        String disposition = (attachment ? "attachment" : "inline") + "; filename*=UTF-8''" + encoded;
         return ResponseEntity.ok()
             .contentType(MediaType.parseMediaType(c.contentType()))
-            .header(HttpHeaders.CONTENT_DISPOSITION, cd.toString())
+            .header(HttpHeaders.CONTENT_DISPOSITION, disposition)
             .header("X-Content-Type-Options", "nosniff")
             .header("Content-Security-Policy", "sandbox; default-src 'none'")
             .cacheControl(CacheControl.noStore().cachePrivate())
