@@ -1,5 +1,7 @@
 package ro.smarthr.employee;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,6 +19,11 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
     Optional<Employee> findByUserId(UUID userId);
 
     boolean existsByManagerId(UUID managerId);
+
+    List<Employee> findAllByUserIdIn(Collection<UUID> userIds);
+
+    @Query("select e.id from Employee e where e.managerId = :managerId")
+    List<UUID> findIdsByManagerId(@Param("managerId") UUID managerId);
 
     /** Singura cale de scriere a user_id (filtrul de tenant se aplică și interogărilor JPQL de update). */
     @Modifying(flushAutomatically = true, clearAutomatically = true)

@@ -37,6 +37,8 @@ logging:
     root: INFO
     org.hibernate.SQL: INFO
     org.hibernate.orm.jdbc.bind: INFO
+    # Conflictele de constrângeri (ex. suprapunere de concedii) devin 409; Hibernate le-ar loga la ERROR cu valorile cheii.
+    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: OFF
 
 app:
   jwt:

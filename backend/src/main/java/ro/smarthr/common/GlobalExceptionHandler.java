@@ -74,6 +74,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         }
     }
 
+    /** Conflict de concurență (lock/versiune): 409 cu mesaj constant. */
+    @ExceptionHandler({org.springframework.dao.PessimisticLockingFailureException.class,
+        org.springframework.orm.ObjectOptimisticLockingFailureException.class})
+    public ResponseEntity<Object> handleConcurrency(Exception ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, Messages.CONCURRENT_UPDATE);
+        pd.setTitle(HttpStatus.CONFLICT.getReasonPhrase());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
+    }
+
     private static String sqlState(Throwable ex) {
         for (Throwable t = ex; t != null; t = t.getCause()) {
             if (t instanceof java.sql.SQLException sql && sql.getSQLState() != null) {
