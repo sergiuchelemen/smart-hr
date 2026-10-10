@@ -48,28 +48,42 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(ex.getStatus()).body(pd);
     }
 
-    /** Încălcare de constrângere unică (ex: cursă la creare); mesajul excepției poate conține date, nu se ecoizează. */
+    /**
+     * Încălcări de constrângeri DB, mapate după SQLState; mesajele sunt constante (fără detalii despre
+     * constrângeri sau date). 23505/23P01/23503 => 409, 23514 => 400; restul rămân 500.
+     */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Object> handleIntegrity(DataIntegrityViolationException ex) {
-        if (!isUniqueViolation(ex)) {
+        String state = sqlState(ex);
+        if (state == null) {
             return handleGeneric(ex);
         }
-        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Conflict cu datele existente.");
-        pd.setTitle(HttpStatus.CONFLICT.getReasonPhrase());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
+        switch (state) {
+            case "23505", "23P01", "23503" -> {
+                ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+                    "Conflict cu datele existente.");
+                pd.setTitle(HttpStatus.CONFLICT.getReasonPhrase());
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
+            }
+            case "23514" -> {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem(HttpStatus.BAD_REQUEST));
+            }
+            default -> {
+                return handleGeneric(ex);
+            }
+        }
     }
 
-    /** SQLState 23505 = unique_violation; doar acestea sunt 409. */
-    private static boolean isUniqueViolation(Throwable ex) {
+    private static String sqlState(Throwable ex) {
         for (Throwable t = ex; t != null; t = t.getCause()) {
-            if (t instanceof java.sql.SQLException sql && "23505".equals(sql.getSQLState())) {
-                return true;
+            if (t instanceof java.sql.SQLException sql && sql.getSQLState() != null) {
+                return sql.getSQLState();
             }
             if (t.getCause() == t) {
                 break;
             }
         }
-        return false;
+        return null;
     }
 
     @ExceptionHandler(Exception.class)

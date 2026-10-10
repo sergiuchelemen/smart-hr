@@ -13,10 +13,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/me")
 public class MeController {
 
-    public record MeResponse(UserInfo user, CompanyInfo company, List<String> permissions) {
+    public record MeResponse(UserInfo user, CompanyInfo company, List<String> permissions,
+                         EmployeeInfo employee, boolean hasDirectReports) {
     }
 
     public record UserInfo(UUID id, String email) {
+    }
+
+    public record EmployeeInfo(UUID id, String firstName, String lastName, UUID managerId) {
     }
 
     public record CompanyInfo(UUID id, String name, String code) {

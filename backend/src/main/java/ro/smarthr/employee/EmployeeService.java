@@ -10,16 +10,83 @@ import org.springframework.transaction.annotation.Transactional;
 import ro.smarthr.common.ApiException;
 import ro.smarthr.common.Emails;
 import ro.smarthr.common.Messages;
+import ro.smarthr.iam.CurrentUserPrivileges;
+import ro.smarthr.iam.UserRepository;
+import ro.smarthr.platform.CompanyRepository;
 
 @Service
 public class EmployeeService {
 
     static final int MAX_PAGE_SIZE = 100;
 
-    private final EmployeeRepository employees;
+    static final int MAX_CHAIN_DEPTH = 1000;
 
-    public EmployeeService(EmployeeRepository employees) {
+    private final EmployeeRepository employees;
+    private final UserRepository users;
+    private final CompanyRepository companies;
+    private final CurrentUserPrivileges currentUser;
+
+    public EmployeeService(EmployeeRepository employees, UserRepository users, CompanyRepository companies,
+                           CurrentUserPrivileges currentUser) {
         this.employees = employees;
+        this.users = users;
+        this.companies = companies;
+        this.currentUser = currentUser;
+    }
+
+    @Transactional
+    public EmployeeController.EmployeeResponse setAccount(UUID id, UUID userId) {
+        CurrentUserPrivileges.Caller caller = currentUser.load();
+        requirePermission(caller, "USER_MANAGE");
+        Employee e = find(id);
+        requireNotOwnEmployee(caller, id);
+        if (userId != null) {
+            users.findById(userId).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, Messages.NOT_FOUND));
+            if (employees.findByUserId(userId).filter(o -> !o.getId().equals(id)).isPresent()) {
+                throw new ApiException(HttpStatus.CONFLICT, Messages.USER_ALREADY_LINKED);
+            }
+        }
+        e.setUserId(userId);
+        return EmployeeController.EmployeeResponse.from(employees.saveAndFlush(e));
+    }
+
+    @Transactional
+    public EmployeeController.EmployeeResponse setManager(UUID id, UUID managerId) {
+        // Lock pe rândul companiei ÎNAINTE de orice citire de angajați: serializează modificările de ierarhie.
+        companies.findByIdForUpdate(CurrentUserPrivileges.companyIdFromToken())
+            .orElseThrow(() -> new ApiException(HttpStatus.FORBIDDEN, Messages.FORBIDDEN));
+        CurrentUserPrivileges.Caller caller = currentUser.load();
+        requirePermission(caller, "LEAVE_APPROVE_ALL");
+        Employee e = find(id);
+        requireNotOwnEmployee(caller, id);
+        if (managerId != null) {
+            if (managerId.equals(id)) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, Messages.BAD_REQUEST);
+            }
+            find(managerId);
+            UUID current = managerId;
+            for (int depth = 0; current != null; depth++) {
+                if (current.equals(id) || depth >= MAX_CHAIN_DEPTH) {
+                    throw new ApiException(HttpStatus.CONFLICT, Messages.MANAGER_CYCLE);
+                }
+                current = find(current).getManagerId();
+            }
+        }
+        e.setManagerId(managerId);
+        return EmployeeController.EmployeeResponse.from(employees.saveAndFlush(e));
+    }
+
+    private static void requirePermission(CurrentUserPrivileges.Caller caller, String code) {
+        if (!caller.permissions().contains(code)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, Messages.FORBIDDEN);
+        }
+    }
+
+    /** Apelantul nu își poate modifica propriul angajat (cel legat de contul lui). */
+    private void requireNotOwnEmployee(CurrentUserPrivileges.Caller caller, UUID employeeId) {
+        if (employees.findByUserId(caller.userId()).filter(o -> o.getId().equals(employeeId)).isPresent()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, Messages.FORBIDDEN);
+        }
     }
 
     @Transactional(readOnly = true)
