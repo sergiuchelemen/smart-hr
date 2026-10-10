@@ -25,7 +25,7 @@ Fără teste unitare: nici JUnit/Mockito în backend, nici Jasmine/Karma în fro
 
 ## Convenții
 - Branch-uri de lucru AI: `feat/<slug>`. Niciodată lucru direct pe `main`.
-- Commit-uri mici, mesaje clare, cu linia `Co-Authored-By` cerută de Claude Code.
+- Commit-uri mici, mesaje clare. **Fără** `Co-Authored-By` și fără alte mențiuni către Claude/AI în mesajele de commit sau în PR-uri (preferința explicită a utilizatorului).
 - **Fără teste unitare.** Verificarea e funcțională (build, rulare, apeluri API/UI) și o face rolul Tester.
 - Nu se comit `.env`, fișiere `.docx` sau alte documente personale (sunt în `.gitignore`).
 
