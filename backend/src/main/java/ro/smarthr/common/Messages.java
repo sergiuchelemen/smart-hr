@@ -50,6 +50,22 @@ public final class Messages {
 
     public static final String COMPANY_CODE_TAKEN = "Codul companiei este deja folosit.";
 
+    public static final String DEPARTMENT_NAME_TAKEN = "Există deja un departament cu acest nume.";
+
+    public static final String POSITION_NAME_TAKEN = "Există deja un post cu acest nume.";
+
+    public static final String DEPARTMENT_CYCLE = "Departamentul părinte ales ar crea o buclă în ierarhie.";
+
+    public static final String DEPARTMENT_TOO_DEEP = "Ierarhia departamentelor depășește adâncimea maximă.";
+
+    public static final String DEPARTMENT_HAS_CHILDREN = "Departamentul are subdepartamente.";
+
+    public static final String DEPARTMENT_HAS_EMPLOYEES = "Departamentul are angajați.";
+
+    public static final String POSITION_HAS_EMPLOYEES = "Postul are angajați.";
+
+    public static final String ORG_INVALID_REFERENCE = "Departament sau post invalid.";
+
     public static final String SESSION_INVALID = "Sesiune invalidă.";
 
     public static final String SESSION_INVALID_HEADER = "Invalid session.";

@@ -32,8 +32,8 @@ public class EmployeeController {
     public record EmployeeRequest(@NotBlank @Size(max = 100) String firstName,
                                   @NotBlank @Size(max = 100) String lastName,
                                   @JsonDeserialize(using = TrimmingDeserializer.class) @Email @Size(max = 254) String workEmail,
-                                  @Size(max = 150) String jobTitle,
-                                  @Size(max = 150) String department,
+                                  UUID positionId,
+                                  UUID departmentId,
                                   @ValidHireDate LocalDate hireDate) {
     }
 
@@ -46,12 +46,14 @@ public class EmployeeController {
         }
     }
 
+    /** jobTitle și department sunt NUMELE postului/departamentului (din join), pentru compatibilitate. */
     public record EmployeeResponse(UUID id, String firstName, String lastName, String workEmail, String jobTitle,
-                                   String department, LocalDate hireDate, UUID userId,
-                                   UUID managerId) {
-        static EmployeeResponse from(Employee e) {
+                                   String department, UUID positionId, UUID departmentId, LocalDate hireDate,
+                                   UUID userId, UUID managerId) {
+        static EmployeeResponse from(Employee e, String positionName, String departmentName) {
             return new EmployeeResponse(e.getId(), e.getFirstName(), e.getLastName(), e.getWorkEmail(),
-                e.getJobTitle(), e.getDepartment(), e.getHireDate(), e.getUserId(), e.getManagerId());
+                positionName, departmentName, e.getPositionId(), e.getDepartmentId(), e.getHireDate(),
+                e.getUserId(), e.getManagerId());
         }
     }
 
