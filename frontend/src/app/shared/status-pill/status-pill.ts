@@ -7,6 +7,8 @@ export type PillStatus = LeaveStatus | 'ACTIVE' | 'DISABLED';
 
 const EXTRA_LABELS = { ACTIVE: 'Activ', DISABLED: 'Dezactivat' } as const;
 
+const FEMININE_LABELS = { ACTIVE: 'Activă', DISABLED: 'Dezactivată' } as const;
+
 const VARIANTS: Record<PillStatus, { tone: string; shape: Shape }> = {
   ACTIVE: { tone: 'success', shape: 'circle' },
   DISABLED: { tone: 'neutral', shape: 'ring' },
@@ -48,9 +50,14 @@ const VARIANTS: Record<PillStatus, { tone: string; shape: Shape }> = {
 })
 export class StatusPill {
   readonly status = input.required<PillStatus>();
+  /** Acord feminin (Activă, Dezactivată), de ex. pentru companii. */
+  readonly feminine = input(false);
   protected readonly label = computed(() => {
     const s = this.status();
-    return s === 'ACTIVE' || s === 'DISABLED' ? EXTRA_LABELS[s] : LEAVE_STATUS_LABELS[s];
+    if (s === 'ACTIVE' || s === 'DISABLED') {
+      return this.feminine() ? FEMININE_LABELS[s] : EXTRA_LABELS[s];
+    }
+    return LEAVE_STATUS_LABELS[s];
   });
   protected readonly variant = computed(() => VARIANTS[this.status()]);
 }
