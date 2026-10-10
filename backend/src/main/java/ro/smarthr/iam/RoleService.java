@@ -42,7 +42,7 @@ public class RoleService {
     @Transactional
     public RoleController.RoleResponse updatePermissions(UUID id, List<String> permissionCodes) {
         Set<String> codes = validate(permissionCodes);
-        Role role = roles.findById(id).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Resursa nu a fost găsită."));
+        Role role = roles.findById(id).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, Messages.NOT_FOUND));
         if (role.isSystem()) {
             throw new ApiException(HttpStatus.FORBIDDEN, "Rolurile de sistem nu pot fi modificate.");
         }

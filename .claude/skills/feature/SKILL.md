@@ -21,6 +21,13 @@ Apelează `tech-lead` cu cerința. Primești planul și criteriile de acceptare.
 - Dacă planul conține „Riscuri / întrebări deschise" care blochează implementarea, **oprește-te** și întreabă utilizatorul.
 - Altfel, prezintă planul pe scurt și continuă.
 
+## Pasul 1b: dacă cerința are UI (frontend, ecrane, machete)
+Subagenții nu pot invoca skill-uri. Tu, orchestratorul:
+1. Invocă skill-ul `design-taste-frontend` (tool-ul Skill), declară „Design Read" și parametrii (varianță, mișcare, densitate).
+2. În promptul developer-ului include: design system-ul (link în `CLAUDE.md`), regulile aplicabile ale skill-ului (un singur accent, fără alb/negru pur, regulă unică de raze, stări de încărcare/gol/eroare, etichetă deasupra câmpului, fără em-dash, fără decor), biblioteca de componente aleasă, și cere-i să citească `.claude/skills/design-taste-frontend/SKILL.md` (secțiunile 4, 9, 14).
+3. În promptul tester-ului include verificarea acelor reguli în tema luminoasă și în cea întunecată.
+Skill-ul nu se aplică dashboard-urilor și tabelelor de date (vezi `CLAUDE.md`).
+
 ## Pasul 2: bucla de calitate (maxim 3 iterații)
 Pentru `iterația = 1..3`:
 1. **Developer**: apelează `developer` cu planul (și, de la iterația 2, cu feedback-ul complet de la Tester/Reviewer).
@@ -30,10 +37,25 @@ Pentru `iterația = 1..3`:
 
 Dacă după 3 iterații nu e rezolvat: **NU face push**. Raportează starea (ce trece, ce nu, problemele rămase) și lasă decizia utilizatorului.
 
-## Pasul 3: push (doar la succes)
+## Pasul 3: push (automat, doar la succes)
+Push-ul se face singur, fără să ceri acord, imediat ce Tester = PASS și Reviewer = APPROVED.
 1. Rulează încă o dată build-ul proiectului (comanda din `CLAUDE.md`). Dacă pică, tratează ca eșec.
-2. `git push -u origin <branch-feat>`. Dacă nu există remote `origin`, spune-o și nu încerca alte variante.
-3. **Niciodată**: push pe `main`/`master`, `--force`, deploy, comenzi de infrastructură.
+2. Verifică `git status`: pe branch nu trebuie să rămână fișiere ale muncii tale necomise. Nu comite `.env`, `.docx` sau alte documente personale.
+3. `git push -u origin <branch-feat>`. Dacă push-ul eșuează din cauza autentificării (ex. `could not read Username`, 403), nu încerca alte variante și nu pune tokenuri în comenzi: raportează eroarea și lasă omul să rezolve.
+4. **Niciodată**: push pe `main`/`master`, `--force`, ștergerea de branch-uri, deploy, comenzi de infrastructură.
+5. După push, verifică cu `git ls-remote --heads origin <branch-feat>` că branch-ul e pe GitHub, la același commit ca local.
+
+Pentru munca împărțită în etape, aplică pașii 1-5 la finalul fiecărei etape aprobate, pe branch-ul ei.
+
+## Pasul 3b: merge în main (automat, după push)
+Doar dacă Tester = PASS, Reviewer = APPROVED, push-ul de la Pasul 3 a reușit și permisiunile din `.claude/settings.local.json` permit merge-ul. Altfel oprește-te și raportează.
+1. `git fetch origin main`. Verifică `git status` (nicio modificare necomisă a muncii tale).
+2. `git checkout main`. Dacă `main` local e în urma lui `origin/main`, adu-l la zi; dacă istoriile sunt separate (fără strămoș comun), unește-le întâi cu `git merge --no-ff --allow-unrelated-histories origin/main`, doar dacă nu există fișiere în conflict.
+3. `git merge --no-ff <branch-feat>`. La conflict: `git merge --abort`, raportează, nu rezolva singur.
+4. Rulează build-ul pe `main` (comanda din `CLAUDE.md`). Dacă pică: nu face push, raportează.
+5. `git push origin main` (niciodată `--force`). Verifică cu `git ls-remote --heads origin main` că `origin/main` e la același commit ca `main` local.
+6. Revino pe un branch `feat/*` pentru munca următoare; nu lucra pe `main`.
+Etapele stivuite se unesc în ordinea dependenței (întâi cea de bază). Nu șterge branch-urile după merge.
 
 ## Pasul 4: raport final
 Un rezumat scurt:
