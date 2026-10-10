@@ -31,10 +31,10 @@ function notBlank(c: AbstractControl<string>): ValidationErrors | null {
       <form class="form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <div class="field">
           <label class="t-label" for="dep-nume">Nume</label>
-          <input pInputText id="dep-nume" formControlName="name" maxlength="150" autocomplete="off"
+          <input pInputText id="dep-nume" formControlName="name" maxlength="100" autocomplete="off"
                  [attr.aria-invalid]="showName() ? 'true' : null" aria-describedby="dep-nume-err" />
           <p id="dep-nume-err" class="t-body-sm err">
-            @if (showName()) { Introdu numele departamentului (cel mult 150 de caractere). }
+            @if (showName()) { Introdu numele departamentului (cel mult 100 de caractere). }
           </p>
         </div>
         <div class="field">
@@ -69,7 +69,7 @@ export class DepartmentDialog implements OnInit {
   protected readonly error = signal('');
 
   protected readonly form = new FormGroup({
-    name: new FormControl('', { nonNullable: true, validators: [notBlank, Validators.maxLength(150)] }),
+    name: new FormControl('', { nonNullable: true, validators: [notBlank, Validators.maxLength(100)] }),
     parentId: new FormControl<string | null>(null),
   });
 
@@ -152,10 +152,10 @@ export class DepartmentDialog implements OnInit {
       <form class="form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <div class="field">
           <label class="t-label" for="post-nume">Nume</label>
-          <input pInputText id="post-nume" formControlName="name" maxlength="150" autocomplete="off"
+          <input pInputText id="post-nume" formControlName="name" maxlength="100" autocomplete="off"
                  [attr.aria-invalid]="show() ? 'true' : null" aria-describedby="post-nume-err" />
           <p id="post-nume-err" class="t-body-sm err">
-            @if (show()) { Introdu numele postului (cel mult 150 de caractere). }
+            @if (show()) { Introdu numele postului (cel mult 100 de caractere). }
           </p>
         </div>
         @if (error()) {
@@ -182,7 +182,7 @@ export class PositionDialog implements OnInit {
   protected readonly error = signal('');
 
   protected readonly form = new FormGroup({
-    name: new FormControl('', { nonNullable: true, validators: [notBlank, Validators.maxLength(150)] }),
+    name: new FormControl('', { nonNullable: true, validators: [notBlank, Validators.maxLength(100)] }),
   });
 
   ngOnInit(): void {
