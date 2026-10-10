@@ -1,0 +1,85 @@
+<header class="head">
+  <h1 class="t-title">Pontaj echipă</h1>
+  <p class="t-muted">{{ subtitle }}</p>
+</header>
+
+<div class="filters">
+  <div class="field">
+    <label class="t-label" for="filtru-luna">Lună</label>
+    <p-select inputId="filtru-luna" [options]="monthOptions" optionLabel="label" optionValue="value"
+              [ngModel]="monthFilter()" (ngModelChange)="onMonth($event)" appendTo="body" />
+  </div>
+  <div class="field">
+    <label class="t-label" for="filtru-stare">Stare</label>
+    <p-select inputId="filtru-stare" [options]="statusOptions" optionLabel="label" optionValue="value"
+              [ngModel]="statusFilter()" (ngModelChange)="onStatus($event)" appendTo="body" />
+  </div>
+</div>
+
+@if (state() === 'error') {
+  <section class="panel state" role="alert">
+    <h2 class="t-heading">Nu am putut încărca pontajele</h2>
+    <p class="t-muted">{{ errorMessage() }}</p>
+    <div>
+      <p-button label="Încearcă din nou" severity="secondary" [outlined]="true" (onClick)="load()" />
+    </div>
+  </section>
+} @else if (firstLoad()) {
+  <section class="panel table-wrap" aria-busy="true" aria-label="Se încarcă pontajele">
+    <div class="skel-head"></div>
+    @for (r of skeletonRows; track r) {
+      <div class="skel-row">
+        <p-skeleton width="75%" height="16px" />
+        <p-skeleton width="40%" height="16px" />
+        <p-skeleton width="40%" height="16px" />
+        <p-skeleton width="60%" height="24px" borderRadius="999px" />
+        <p-skeleton width="30%" height="16px" />
+      </div>
+    }
+  </section>
+} @else if (state() === 'ready' && total() === 0) {
+  <section class="panel state">
+    @if (filtered()) {
+      <p class="t-heading">Niciun pontaj nu corespunde filtrelor.</p>
+      <p class="t-muted">Schimbă luna sau starea ca să vezi alte pontaje.</p>
+    } @else {
+      <p class="t-heading">Nu ai pontaje de aprobat.</p>
+      <p class="t-muted">Pontajele trimise spre aprobare apar aici.</p>
+    }
+  </section>
+} @else {
+  <section class="panel table-wrap" [class.busy]="state() === 'loading'" [attr.aria-busy]="state() === 'loading'">
+    <p-table [value]="items()" [lazy]="true" [lazyLoadOnInit]="false" (onLazyLoad)="onLazy($event)"
+             [paginator]="true" [rows]="size()" [first]="first()" [totalRecords]="total()"
+             [rowsPerPageOptions]="[10, 20, 50]" dataKey="employee.id"
+             currentPageReportTemplate="{first} - {last} din {totalRecords}" [showCurrentPageReport]="true"
+             [tableStyle]="{ 'min-width': '44rem' }">
+      <ng-template #header>
+        <tr>
+          <th scope="col">Angajat</th>
+          <th scope="col">Ore lucrate</th>
+          <th scope="col">Normă</th>
+          <th scope="col">Stare</th>
+          <th scope="col">Acțiuni</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-r>
+        <tr>
+          <td>{{ name(r.employee) }}</td>
+          <td class="num">{{ minutes(r.summary.workedMinutes) }}</td>
+          <td class="num">{{ minutes(r.summary.normMinutes) }}</td>
+          <td><app-status-pill [status]="pill(r.status)" /></td>
+          <td>
+            <p-button class="row-action" label="Vezi" size="small" severity="secondary" [outlined]="true"
+                      [ariaLabel]="'Vezi pontajul lui ' + name(r.employee)" (onClick)="selected.set(r)" />
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </section>
+}
+
+@if (selected(); as s) {
+  <app-angajat-pontaj-dialog [employee]="s.employee" [month]="monthFilter()" [canDecide]="canDecideOn(s)"
+                             (changed)="onChanged()" (closed)="selected.set(null)" />
+}
