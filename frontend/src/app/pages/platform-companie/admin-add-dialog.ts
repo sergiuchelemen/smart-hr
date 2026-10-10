@@ -38,7 +38,7 @@ import { PasswordInput, passwordValidator } from '../../shared/password-input/pa
             } @else if (bad('password')) {
               Parola trebuie să aibă cel puțin 12 caractere.
             } @else {
-              Cel puțin 12 caractere. Comunic-o pe un canal sigur; nu va mai fi afișată după salvare.
+              Cel puțin 12 caractere. Comunică-o pe un canal sigur; nu va mai fi afișată după salvare.
             }
           </p>
         </div>
