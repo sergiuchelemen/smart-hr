@@ -37,6 +37,11 @@ export class Shell {
     this.theme.set(value);
   }
 
+  /** Deconectează și duce la autentificare, unde se poate alege altă companie. */
+  protected switchCompany(): void {
+    this.auth.logout();
+  }
+
   protected logout(): void {
     this.auth.logout();
   }

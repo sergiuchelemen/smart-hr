@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/auth/auth.guard';
+import { platformAuthGuard, platformGuestGuard } from './core/platform-auth/platform-auth.guard';
 import { permissionGuard } from './core/auth/permission.guard';
 
 export const routes: Routes = [
@@ -60,6 +61,31 @@ export const routes: Routes = [
         path: 'acces-interzis',
         loadComponent: () =>
           import('./pages/acces-interzis/acces-interzis').then((m) => m.AccesInterzisPage),
+      },
+    ],
+  },
+  {
+    path: 'platform/login',
+    canActivate: [platformGuestGuard],
+    loadComponent: () =>
+      import('./pages/platform-login/platform-login').then((m) => m.PlatformLoginPage),
+  },
+  {
+    path: 'platform',
+    canActivate: [platformAuthGuard],
+    loadComponent: () =>
+      import('./layout/platform-shell/platform-shell').then((m) => m.PlatformShell),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'companii' },
+      {
+        path: 'companii',
+        loadComponent: () =>
+          import('./pages/platform-companii/platform-companii').then((m) => m.PlatformCompaniiPage),
+      },
+      {
+        path: 'companii/:id',
+        loadComponent: () =>
+          import('./pages/platform-companie/platform-companie').then((m) => m.PlatformCompaniePage),
       },
     ],
   },

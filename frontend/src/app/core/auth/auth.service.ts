@@ -82,7 +82,8 @@ export class AuthService {
   }
 
   private setToken(token: string): void {
-    if (!decodePayload(token)?.exp) {
+    const p = decodePayload(token);
+    if (!p?.exp || p.typ === 'platform') {
       throw new Error('Token invalid');
     }
     try {
@@ -102,7 +103,7 @@ export class AuthService {
       return null;
     }
     const exp = decodePayload(stored)?.exp;
-    if (!stored || !exp || exp * 1000 <= Date.now()) {
+    if (!stored || !exp || exp * 1000 <= Date.now() || decodePayload(stored)?.typ === 'platform') {
       try {
         sessionStorage.removeItem(TOKEN_KEY);
       } catch {

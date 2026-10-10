@@ -1,16 +1,34 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { Logo } from '../../shared/logo/logo';
 import { AuthService } from '../../core/auth/auth.service';
 
+const LAST_COMPANY_KEY = 'smarthr.lastCompany';
+
+function readLastCompany(): string {
+  try {
+    return localStorage.getItem(LAST_COMPANY_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function saveLastCompany(code: string): void {
+  try {
+    localStorage.setItem(LAST_COMPANY_KEY, code);
+  } catch {
+    // ignorat
+  }
+}
+
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, MessageModule, Logo],
+  imports: [ReactiveFormsModule, RouterLink, ButtonModule, InputTextModule, MessageModule, Logo],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <main class="wrap">
@@ -54,6 +72,7 @@ import { AuthService } from '../../core/auth/auth.service';
         </div>
 
         <p-button type="submit" label="Autentificare" [loading]="loading()" [fluid]="true" />
+        <a routerLink="/platform/login" class="t-body-sm platform-link">Administrare platformă</a>
       </form>
     </main>
   `,
@@ -64,6 +83,9 @@ import { AuthService } from '../../core/auth/auth.service';
     .brand { margin: 0; padding: var(--space-3) 0; }
     .field { display: grid; gap: var(--space-1); }
     small { min-height: 20px; font-size: 13px; line-height: 20px; color: var(--ink-muted); }
+    .platform-link { justify-self: center; color: var(--ink-muted); }
+    .platform-link:hover { color: var(--brand-ink); }
+    .platform-link:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: var(--radius-field); }
     small.err { color: var(--danger-ink); }
   `,
 })
@@ -77,7 +99,7 @@ export class LoginPage {
   protected readonly submitted = signal(false);
 
   protected readonly form = this.fb.nonNullable.group({
-    companyCode: ['', [Validators.required]],
+    companyCode: [readLastCompany(), [Validators.required]],
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required]],
   });
@@ -98,6 +120,7 @@ export class LoginPage {
     const { companyCode, email, password } = this.form.getRawValue();
     this.auth.login({ companyCode: companyCode.trim(), email: email.trim(), password }).subscribe({
       next: async () => {
+        saveLastCompany(companyCode.trim());
         await this.auth.loadUser();
         this.loading.set(false);
         await this.router.navigateByUrl('/acasa');

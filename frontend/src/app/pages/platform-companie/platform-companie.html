@@ -1,0 +1,103 @@
+<p class="back"><a routerLink="/platform/companii"><i class="pi pi-arrow-left" aria-hidden="true"></i> Toate companiile</a></p>
+
+<p class="sr-only" aria-live="polite">
+  @if (status() === 'loading') { Se încarcă compania. }
+</p>
+
+@if (status() === 'error') {
+  <section class="panel state" role="alert">
+    <h1 class="t-heading" tabindex="-1">{{ notFound() ? 'Compania nu a fost găsită' : 'Nu am putut încărca compania' }}</h1>
+    <p class="t-muted">{{ errorMessage() }}</p>
+    @if (!notFound()) {
+      <div>
+        <p-button label="Încearcă din nou" severity="secondary" [outlined]="true" (onClick)="load()" />
+      </div>
+    }
+  </section>
+} @else if (!company()) {
+  <section class="panel state" aria-busy="true" aria-label="Se încarcă compania">
+    <p-skeleton width="16rem" height="28px" />
+    <p-skeleton width="10rem" height="16px" />
+    <div class="stats">
+      @for (s of [1, 2, 3]; track s) {
+        <p-skeleton width="100%" height="64px" />
+      }
+    </div>
+  </section>
+} @else {
+  @let c = company()!;
+  <header class="head">
+    <div>
+      <h1 class="t-title" tabindex="-1">{{ c.name }}</h1>
+      <p class="t-muted">Cod: <code>{{ c.code }}</code> · Creată la {{ formatInstant(c.createdAt) }}</p>
+    </div>
+    <app-status-pill [status]="c.enabled ? 'ACTIVE' : 'DISABLED'" [feminine]="true" />
+  </header>
+
+  <section class="stats" aria-label="Utilizatori" [class.busy]="status() === 'loading'">
+    <div class="panel stat">
+      <p class="t-label t-muted">Utilizatori totali</p>
+      <p class="num">{{ c.usersTotal }}</p>
+    </div>
+    <div class="panel stat">
+      <p class="t-label t-muted">Utilizatori activi</p>
+      <p class="num">{{ c.usersActive }}</p>
+    </div>
+    <div class="panel stat">
+      <p class="t-label t-muted">Administratori activi</p>
+      <p class="num">{{ c.adminsActive }}</p>
+    </div>
+  </section>
+
+  <section class="panel block">
+    <h2 class="t-heading">Stare</h2>
+    @if (c.enabled) {
+      <p class="t-muted">Compania este activă. Dacă o dezactivezi, utilizatorii ei nu se mai pot autentifica.</p>
+    } @else {
+      <p class="t-muted">Compania este dezactivată: utilizatorii ei nu se pot autentifica.</p>
+    }
+
+    @if (error()) {
+      <p-message severity="error" role="alert">{{ error() }}</p-message>
+    }
+
+    @if (confirming()) {
+      <div class="confirm" role="group" aria-label="Confirmare schimbare stare">
+        @if (c.enabled) {
+          <p>
+            Dezactivezi compania <strong>{{ c.name }}</strong>? Utilizatorii ei nu se vor mai putea autentifica,
+            iar sesiunile deschise se închid. O poți activa din nou oricând.
+          </p>
+        } @else {
+          <p>Activezi compania <strong>{{ c.name }}</strong>? Utilizatorii ei activi se vor putea autentifica din nou.</p>
+        }
+        <div class="row">
+          <p-button label="Renunță" severity="secondary" [text]="true" [disabled]="busy()" (onClick)="confirming.set(false)" />
+          <p-button [label]="c.enabled ? 'Dezactivează compania' : 'Activează compania'"
+                    [severity]="c.enabled ? 'danger' : 'primary'" [loading]="busy()" (onClick)="toggle()" />
+        </div>
+      </div>
+    } @else {
+      <div>
+        <p-button [label]="c.enabled ? 'Dezactivează compania' : 'Activează compania'" severity="secondary"
+                  [outlined]="true" (onClick)="confirming.set(true)" />
+      </div>
+    }
+  </section>
+
+  <section class="panel block">
+    <h2 class="t-heading">Administratori</h2>
+    <p class="t-muted">Adaugă un cont de administrator pentru această companie, de exemplu dacă accesul a fost pierdut.</p>
+    @if (added()) {
+      <p-message severity="success" role="status">Administratorul a fost adăugat.</p-message>
+    }
+    <div>
+      <p-button label="Adaugă administrator" icon="pi pi-plus" severity="secondary" [outlined]="true"
+                (onClick)="adminDialog.set(true)" />
+    </div>
+  </section>
+
+  @if (adminDialog()) {
+    <app-admin-add-dialog [companyId]="c.id" (closed)="onAdminClosed($event)" />
+  }
+}

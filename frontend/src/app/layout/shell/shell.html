@@ -9,6 +9,8 @@
     <p-select class="theme" [options]="themes" optionLabel="label" optionValue="value"
               [ngModel]="theme.choice()" (ngModelChange)="setTheme($event)"
               ariaLabel="Temă de culori" />
+    <p-button class="switch" label="Schimbă compania" icon="pi pi-arrow-right-arrow-left" severity="secondary"
+              [text]="true" (onClick)="switchCompany()" />
     <p-button label="Deconectare" icon="pi pi-sign-out" severity="secondary" [outlined]="true"
               (onClick)="logout()" />
   </header>
