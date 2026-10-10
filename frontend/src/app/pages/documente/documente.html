@@ -1,0 +1,147 @@
+<header class="head">
+  <div>
+    <h1 class="t-title" tabindex="-1">Documente</h1>
+    <p class="t-muted">Regulamente, politici și proceduri ale companiei.</p>
+  </div>
+  <p-button *appHasPermission="'DOCUMENT_MANAGE'" data-key="nou" label="Încarcă document" icon="pi pi-upload"
+            (onClick)="open({ kind: 'form', document: null }, 'nou')" />
+</header>
+
+<div class="tools">
+  <div class="field search">
+    <label class="t-label" for="doc-cauta">Căutare</label>
+    <input pInputText id="doc-cauta" type="search" autocomplete="off" maxlength="100" [ngModel]="query()"
+           (ngModelChange)="onQuery($event)" aria-describedby="doc-cauta-ajutor" />
+    <p id="doc-cauta-ajutor" class="t-body-sm t-muted">Caută în titlu și în descriere.</p>
+  </div>
+  @if (canManage()) {
+    <div class="field">
+      <label class="t-label" id="doc-vis-et">Vizibil pentru</label>
+      <p-select [options]="visibilityOptions" optionLabel="label" optionValue="value" [ngModel]="visibility()"
+                (ngModelChange)="visibility.set($event)" ariaLabelledBy="doc-vis-et" appendTo="body" />
+      <p class="t-body-sm t-muted">Se aplică documentelor din pagina afișată.</p>
+    </div>
+  }
+</div>
+
+@if (actionError()) {
+  <p class="panel state-inline t-body-sm" role="alert">{{ actionError() }}</p>
+}
+
+<div class="layout">
+  <div class="cats" role="group" aria-label="Categorii">
+    <button type="button" [attr.aria-pressed]="category() === null" (click)="onCategory(null)">
+      <span>Toate</span><span class="n">{{ totalCount() }}</span>
+    </button>
+    @for (c of categories(); track c.category) {
+      <button type="button" [attr.aria-pressed]="category() === c.category" (click)="onCategory(c.category)">
+        <span>{{ c.category }}</span><span class="n">{{ c.count }}</span>
+      </button>
+    }
+  </div>
+
+  <div class="content">
+    <p class="sr-only" aria-live="polite">
+      @if (status() === 'loading') { Se încarcă documentele. }
+    </p>
+    @if (status() === 'error') {
+      <section class="panel state" role="alert">
+        <h2 class="t-heading">Nu am putut încărca documentele</h2>
+        <p class="t-muted">Verifică conexiunea și încearcă din nou.</p>
+        <div>
+          <p-button label="Încearcă din nou" severity="secondary" [outlined]="true" (onClick)="load()" />
+        </div>
+      </section>
+    } @else if (firstLoad()) {
+      <section class="panel table-wrap" aria-busy="true" aria-label="Se încarcă documentele">
+        <div class="skel-head"></div>
+        @for (r of skeletonRows; track r) {
+          <div class="skel-row">
+            <p-skeleton width="70%" height="16px" />
+            <p-skeleton width="50%" height="16px" />
+            <p-skeleton width="40%" height="16px" />
+            <p-skeleton width="50%" height="16px" />
+            <p-skeleton width="40%" height="16px" />
+            <p-skeleton width="60%" height="16px" />
+          </div>
+        }
+      </section>
+    } @else if (total() === 0) {
+      <section class="panel state">
+        @if (filtered()) {
+          <p class="t-heading">Niciun document găsit.</p>
+          <p class="t-muted">Schimbă căutarea sau categoria.</p>
+        } @else {
+          <p class="t-heading">Nu există documente.</p>
+          <p class="t-muted">Administratorii le pot încărca din butonul „Încarcă document”.</p>
+        }
+      </section>
+    } @else {
+      <section class="panel table-wrap" [class.busy]="status() === 'loading'" [attr.aria-busy]="status() === 'loading'">
+        <p-table [value]="shown()" [lazy]="true" [lazyLoadOnInit]="false" (onLazyLoad)="onLazy($event)"
+                 [paginator]="true" [rows]="size()" [first]="first()" [totalRecords]="total()"
+                 [rowsPerPageOptions]="[10, 20, 50]" dataKey="id"
+                 currentPageReportTemplate="{first} - {last} din {totalRecords}" [showCurrentPageReport]="true"
+                 [tableStyle]="{ 'min-width': '52rem' }">
+          <ng-template #header>
+            <tr>
+              <th scope="col">Document</th>
+              <th scope="col">Categorie</th>
+              <th scope="col">Vizibil pentru</th>
+              <th scope="col">Actualizat</th>
+              <th scope="col" class="num">Mărime</th>
+              <th scope="col">Acțiuni</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-d>
+            <tr>
+              <td>
+                <div class="doc-title">{{ d.title }}</div>
+                <div class="t-body-sm t-muted">{{ typeLabel(d) }}</div>
+              </td>
+              <td><span class="chip">{{ d.category }}</span></td>
+              <td><span class="chip chip-brand">{{ visLabel(d) }}</span></td>
+              <td>{{ date(d) }}</td>
+              <td class="num">{{ sizeLabel(d) }}</td>
+              <td>
+                <div class="actions">
+                  <p-button class="row-action" [attr.data-key]="'prev-' + d.id" label="Previzualizează" size="small"
+                            severity="secondary" [outlined]="true" [ariaLabel]="'Previzualizează ' + d.title"
+                            (onClick)="open({ kind: 'preview', document: d }, 'prev-' + d.id)" />
+                  <p-button class="row-action" [attr.data-key]="'down-' + d.id" label="Descarcă" size="small"
+                            severity="secondary" [outlined]="true" [ariaLabel]="'Descarcă ' + d.title"
+                            (onClick)="download(d)" />
+                  @if (canManage()) {
+                    <p-button class="row-action" [attr.data-key]="'edit-' + d.id" label="Editează" size="small"
+                              severity="secondary" [outlined]="true" [ariaLabel]="'Editează ' + d.title"
+                              (onClick)="open({ kind: 'form', document: d }, 'edit-' + d.id)" />
+                    <p-button class="row-action" [attr.data-key]="'del-' + d.id" label="Șterge" size="small"
+                              severity="secondary" [outlined]="true" [ariaLabel]="'Șterge ' + d.title"
+                              (onClick)="open({ kind: 'delete', document: d }, 'del-' + d.id)" />
+                  }
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template #emptymessage>
+            <tr><td colspan="6" class="t-muted">Niciun document din această pagină nu corespunde filtrului.</td></tr>
+          </ng-template>
+        </p-table>
+      </section>
+    }
+  </div>
+</div>
+
+@if (dialog(); as d) {
+  @switch (d.kind) {
+    @case ('form') {
+      <app-document-form-dialog [document]="d.document" [categories]="categories()" (closed)="onClosed($event)" />
+    }
+    @case ('delete') {
+      <app-document-delete-dialog [document]="d.document" (closed)="onClosed($event)" />
+    }
+    @case ('preview') {
+      <app-document-preview-dialog [document]="d.document" (closed)="onClosed(false)" />
+    }
+  }
+}

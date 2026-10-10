@@ -68,6 +68,10 @@ export const routes: Routes = [
           import('./pages/pontaj-echipa/pontaj-echipa').then((m) => m.PontajEchipaPage),
       },
       {
+        path: 'documente',
+        loadComponent: () => import('./pages/documente/documente').then((m) => m.DocumentePage),
+      },
+      {
         path: 'admin/utilizatori',
         canActivate: [permissionGuard],
         data: { permissions: ['USER_READ', 'USER_MANAGE'], permissionsMode: 'any' },
