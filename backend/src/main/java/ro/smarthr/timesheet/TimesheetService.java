@@ -204,6 +204,21 @@ public class TimesheetService {
         return view(target, m, true);
     }
 
+    /** Pentru tabloul de bord: luni trimise și în așteptare; scopeIds == null => toată compania (fără propriul angajat). */
+    public long submittedCount(Collection<UUID> scopeIds, UUID excludeEmployeeId) {
+        Criteria c = Criteria.where("status").is(TimesheetStatus.SUBMITTED);
+        if (scopeIds != null) {
+            List<UUID> ids = scopeIds.stream().filter(i -> !i.equals(excludeEmployeeId)).toList();
+            if (ids.isEmpty()) {
+                return 0;
+            }
+            c = c.and("employeeId").in(ids);
+        } else if (excludeEmployeeId != null) {
+            c = c.and("employeeId").ne(excludeEmployeeId);
+        }
+        return mongo.count(TimesheetPeriod.class, c);
+    }
+
     // ---------- decizie ----------
 
     public MonthResponse approve(UUID employeeId, String month) {

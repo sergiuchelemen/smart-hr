@@ -118,6 +118,13 @@ public class DocumentService {
         return new Page(items, pg, sz, total);
     }
 
+    /** Ultimele documente vizibile apelantului (aceleași reguli de vizibilitate ca lista). */
+    public List<LibraryDocument> recent(int limit) {
+        Caller c = currentUser.load();
+        return mongo.find(LibraryDocument.class, Criteria.where("visibility").in(visibleLevels(c)),
+            Sort.by(Sort.Direction.DESC, "updatedAt").and(Sort.by("_id")), 0, Math.min(Math.max(limit, 1), 10));
+    }
+
     private static String clip(String s, int max) {
         return s.length() > max ? s.substring(0, max) : s;
     }

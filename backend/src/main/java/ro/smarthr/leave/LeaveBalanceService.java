@@ -80,6 +80,12 @@ public class LeaveBalanceService {
         employees.findById(employeeId).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, Messages.NOT_FOUND));
     }
 
+    /** Pentru tabloul de bord: apelantul a fost deja autorizat. */
+    @Transactional(readOnly = true)
+    public LeaveBalanceController.BalanceResponse forEmployee(UUID employeeId, int year) {
+        return response(employeeId, year);
+    }
+
     private LeaveBalanceController.BalanceResponse response(UUID employeeId, int year) {
         long pending = requests.sumPendingRestDays(employeeId, LeaveService.yearStart(year),
             LeaveService.yearEnd(year));
