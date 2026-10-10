@@ -77,6 +77,10 @@ export class AuthService {
     return permissions.every((p) => this.hasPermission(p));
   }
 
+  hasAny(permissions: readonly string[]): boolean {
+    return permissions.some((p) => this.hasPermission(p));
+  }
+
   private setToken(token: string): void {
     if (!decodePayload(token)?.exp) {
       throw new Error('Token invalid');
