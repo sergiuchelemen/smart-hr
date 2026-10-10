@@ -54,6 +54,9 @@ public class LeaveRequest {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
+    @Column(name = "requested_by_user_id", updatable = false)
+    private UUID requestedByUserId;
+
     @Column(name = "decided_by_user_id")
     private UUID decidedByUserId;
 
@@ -74,7 +77,8 @@ public class LeaveRequest {
     }
 
     public LeaveRequest(UUID employeeId, LeaveType type, LocalDate startDate, LocalDate endDate, int workingDays,
-                        String note) {
+                        String note, UUID requestedByUserId) {
+        this.requestedByUserId = requestedByUserId;
         this.employeeId = employeeId;
         this.type = type;
         this.startDate = startDate;
@@ -136,6 +140,10 @@ public class LeaveRequest {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public UUID getRequestedByUserId() {
+        return requestedByUserId;
     }
 
     public UUID getDecidedByUserId() {

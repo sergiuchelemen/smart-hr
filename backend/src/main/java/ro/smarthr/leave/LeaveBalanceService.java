@@ -42,6 +42,7 @@ public class LeaveBalanceService {
     public LeaveBalanceController.BalanceResponse get(UUID employeeId, int year) {
         Caller caller = currentUser.load();
         LeaveService.requirePermission(caller, "LEAVE_BALANCE_MANAGE");
+        requireNotOwnEmployee(caller, employeeId);
         int y = LeaveService.checkYear(year);
         requireEmployee(employeeId);
         return response(employeeId, y);
@@ -51,6 +52,7 @@ public class LeaveBalanceService {
     public LeaveBalanceController.BalanceResponse put(UUID employeeId, int year, int entitled, int carriedOver) {
         Caller caller = currentUser.load();
         LeaveService.requirePermission(caller, "LEAVE_BALANCE_MANAGE");
+        requireNotOwnEmployee(caller, employeeId);
         int y = LeaveService.checkYear(year);
         requireEmployee(employeeId);
         LeaveBalance b = balances.lockByEmployeeIdAndYear(employeeId, y).orElse(null);
@@ -65,6 +67,13 @@ public class LeaveBalanceService {
             balances.saveAndFlush(b);
         }
         return response(employeeId, y);
+    }
+
+    /** Separarea atribuțiilor: nimeni nu își administrează propriul sold (se vede prin GET /api/leave/balance). */
+    private void requireNotOwnEmployee(Caller caller, UUID employeeId) {
+        if (employees.findByUserId(caller.userId()).map(e -> e.getId().equals(employeeId)).orElse(false)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, Messages.FORBIDDEN);
+        }
     }
 
     private void requireEmployee(UUID employeeId) {
