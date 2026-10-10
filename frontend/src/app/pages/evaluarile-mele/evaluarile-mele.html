@@ -1,0 +1,115 @@
+<header class="head">
+  <h1 class="t-title">Evaluările mele</h1>
+  <p class="t-muted">Autoevaluarea din ciclul curent și rezultatele ciclurilor încheiate.</p>
+</header>
+
+@if (!hasEmployee()) {
+  <section class="panel state">
+    <p class="t-heading">Contul tău nu este asociat unui angajat.</p>
+    <p class="t-muted">Contactează departamentul HR.</p>
+  </section>
+} @else if (state() === 'error') {
+  <section class="panel state" role="alert">
+    <h2 class="t-heading">Nu am putut încărca evaluările</h2>
+    <p class="t-muted">{{ errorMessage() }}</p>
+    <div><p-button label="Încearcă din nou" severity="secondary" [outlined]="true" (onClick)="load()" /></div>
+  </section>
+} @else if (state() === 'loading') {
+  <section class="panel state" aria-busy="true" aria-label="Se încarcă evaluările">
+    <p-skeleton width="40%" height="22px" />
+    <p-skeleton width="100%" height="6rem" />
+    <p-skeleton width="100%" height="6rem" />
+  </section>
+} @else {
+  <section class="panel block" aria-labelledby="titlu-curent">
+    <h2 class="t-heading" id="titlu-curent">Ciclul curent</h2>
+    @if (current(); as e) {
+      <div class="meta">
+        <span class="t-body-sm"><strong>{{ e.cycle.name }}</strong></span>
+        <span class="t-body-sm t-muted">{{ period(e) }}</span>
+        <app-status-pill [status]="pill(e.status)" />
+      </div>
+      @if (isSent(e)) {
+        <p-message severity="success" role="status">
+          Autoevaluarea a fost trimisă. Rezultatul evaluării managerului apare după închiderea ciclului.
+        </p-message>
+        <app-review-form [criteria]="e.cycle.criteria" [idPrefix]="'sent-' + e.id" [readonly]="true"
+                         [scores]="e.self?.scores ?? {}" [comment]="e.self?.comment ?? ''" />
+      } @else {
+        <app-review-form [criteria]="e.cycle.criteria" [idPrefix]="'self-' + e.id" [(scores)]="scores"
+                         [(comment)]="comment" [disabled]="busy()" [showErrors]="showErrors()" />
+        @if (error()) {
+          <p-message severity="error" role="alert">{{ error() }}</p-message>
+        }
+        @if (confirming()) {
+          <p-message severity="warn" role="alert">
+            Trimiți autoevaluarea? După trimitere nu mai poate fi modificată.
+          </p-message>
+          <div class="actions">
+            <p-button label="Renunță" severity="secondary" [text]="true" [disabled]="busy()" (onClick)="confirming.set(false)" />
+            <p-button label="Confirmă trimiterea" [loading]="busy()" (onClick)="send(e)" />
+          </div>
+        } @else {
+          <div class="actions">
+            <p-button label="Trimite autoevaluarea" (onClick)="review(e)" />
+          </div>
+        }
+      }
+    } @else {
+      <p class="t-muted">Nu există un ciclu de evaluare deschis acum.</p>
+    }
+  </section>
+
+  <section class="block" aria-labelledby="titlu-istoric">
+    <h2 class="t-heading" id="titlu-istoric">Istoric</h2>
+    @if (history().length === 0) {
+      <p class="panel state t-muted">Nu ai încă evaluări încheiate.</p>
+    }
+    @for (e of history(); track e.id) {
+      <article class="panel block" [attr.aria-label]="'Evaluare ' + e.cycle.name">
+        <div class="meta">
+          <h3 class="t-heading">{{ e.cycle.name }}</h3>
+          <span class="t-body-sm t-muted">{{ period(e) }}</span>
+          <app-status-pill [status]="pill(e.status)" />
+        </div>
+        @if (e.finalScore != null) {
+          <p class="final">
+            <span class="t-label t-muted">Scor final</span>
+            <span class="value num">{{ score(e.finalScore) }}</span>
+            <span class="t-body-sm t-muted">din 5</span>
+            @if (e.trend != null) {
+              <span class="t-body-sm">față de ciclul anterior: <strong class="num">{{ trend(e.trend) }}</strong></span>
+            }
+          </p>
+        } @else {
+          <p class="t-muted">{{ e.locked ? 'Evaluarea nu a fost finalizată înainte de închiderea ciclului.' : 'Disponibil după închiderea ciclului' }}</p>
+        }
+        <div class="table-wrap">
+          <table class="scores">
+            <caption class="sr-only">Scoruri pe criterii pentru {{ e.cycle.name }}</caption>
+            <thead>
+              <tr><th scope="col">Criteriu</th><th scope="col">Scorul tău</th><th scope="col">Scor manager</th></tr>
+            </thead>
+            <tbody>
+              @for (c of e.cycle.criteria; track c.key) {
+                <tr>
+                  <th scope="row">{{ c.name }}</th>
+                  <td class="num">{{ scoreOf(e.self, c.key) }}</td>
+                  <td class="num">
+                    @if (e.manager) { {{ scoreOf(e.manager, c.key) }} } @else { <span class="t-muted">Disponibil după închiderea ciclului</span> }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (e.manager) {
+          <div>
+            <p class="t-label t-muted">Comentariul managerului</p>
+            <p [class.t-muted]="!e.manager.comment">{{ e.manager.comment || 'Fără comentariu.' }}</p>
+          </div>
+        }
+      </article>
+    }
+  </section>
+}
