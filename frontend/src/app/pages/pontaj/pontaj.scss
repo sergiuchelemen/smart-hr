@@ -1,0 +1,31 @@
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+.state { padding: var(--space-6); display: grid; gap: var(--space-2); justify-items: start; }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); margin-bottom: var(--space-4); }
+.month-nav { display: flex; align-items: center; gap: var(--space-3); }
+.month { min-width: 10rem; text-align: center; }
+:host ::ng-deep .msg { margin-bottom: var(--space-4); display: flex; }
+.summary { padding: var(--space-5); margin-bottom: var(--space-5); display: grid; gap: var(--space-4); }
+.cal-panel { padding: var(--space-5); display: grid; gap: var(--space-4); }
+.cal-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
+.quick { display: grid; gap: var(--space-1); justify-items: start; }
+.busy { opacity: 0.6; transition: opacity var(--motion); }
+.figures {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: var(--space-5);
+}
+.figure { display: grid; gap: var(--space-1); align-content: start; }
+.figure dt, .figure dd { margin: 0; }
+.value { font-size: 28px; line-height: 34px; font-weight: 600; }
+.main .value { color: var(--brand-ink); }
+@media (prefers-reduced-motion: reduce) {
+  .busy { transition: none; }
+}
