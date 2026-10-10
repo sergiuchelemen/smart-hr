@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ro.smarthr.common.ApiException;
 import ro.smarthr.common.Emails;
+import ro.smarthr.common.Messages;
 
 @Service
 public class UserService {
@@ -17,11 +18,14 @@ public class UserService {
     private final UserRepository users;
     private final RoleRepository roles;
     private final PasswordEncoder encoder;
+    private final CurrentUserPrivileges currentUser;
 
-    public UserService(UserRepository users, RoleRepository roles, PasswordEncoder encoder) {
+    public UserService(UserRepository users, RoleRepository roles, PasswordEncoder encoder,
+                       CurrentUserPrivileges currentUser) {
         this.users = users;
         this.roles = roles;
         this.encoder = encoder;
+        this.currentUser = currentUser;
     }
 
     @Transactional(readOnly = true)
@@ -38,6 +42,13 @@ public class UserService {
         List<Role> found = roles.findAllById(ids);
         if (found.size() != ids.size()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Cerere invalidă.");
+        }
+        // Anti-escaladare: privilegiile rolurilor atribuite trebuie incluse în privilegiile actuale ale apelantului
+        // (acoperă și rolurile de sistem, ex. HR_ADMIN).
+        Set<String> callerPerms = currentUser.load().permissions();
+        boolean allowed = found.stream().allMatch(r -> callerPerms.containsAll(r.getPermissions()));
+        if (!allowed) {
+            throw new ApiException(HttpStatus.FORBIDDEN, Messages.FORBIDDEN);
         }
         if (users.existsByEmail(normalized)) {
             throw new ApiException(HttpStatus.CONFLICT, "Există deja un utilizator cu acest email.");
