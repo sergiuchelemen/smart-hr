@@ -8,3 +8,7 @@ node_modules/
 
 # Documente personale (fișa de înscriere etc.)
 *.docx
+
+# Frontend
+frontend/.angular/
+frontend/dist/

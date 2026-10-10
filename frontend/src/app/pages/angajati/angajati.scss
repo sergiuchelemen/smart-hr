@@ -1,0 +1,16 @@
+.head { display: grid; gap: var(--space-1); margin-bottom: var(--space-5); }
+.state { padding: var(--space-6); display: grid; gap: var(--space-2); justify-items: start; }
+.table-wrap { overflow-x: auto; transition: opacity var(--motion); }
+.table-wrap.busy { opacity: 0.6; }
+
+.skel-head { height: 48px; background: var(--surface-sunken); border-bottom: 1px solid var(--border); }
+.skel-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  align-items: center;
+  padding: 0 var(--space-4);
+  height: 56px;
+  border-bottom: 1px solid var(--border);
+  min-width: 40rem;
+}

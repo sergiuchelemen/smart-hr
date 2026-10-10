@@ -1,0 +1,103 @@
+@use './styles/tokens';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 22px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.t-title {
+  font-size: 24px;
+  line-height: 30px;
+  font-weight: 600;
+}
+
+.t-heading {
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 600;
+}
+
+.t-body-sm {
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.t-label {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+}
+
+.t-muted {
+  color: var(--ink-muted);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+a {
+  color: var(--brand-ink);
+}
+
+// Focus vizibil: inel 2px în culoarea brand
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.p-button:focus-visible,
+.p-select:focus-within,
+.p-inputtext:focus-visible,
+.p-password-input:focus-visible,
+.p-paginator-page:focus-visible,
+.p-paginator-next:focus-visible,
+.p-paginator-prev:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.p-datatable-paginator-bottom {
+  border: 0;
+}
+
+.panel {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

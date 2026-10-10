@@ -1,0 +1,43 @@
+<div class="shell">
+  <header class="topbar">
+    <p-button class="menu-btn" icon="pi pi-bars" [text]="true" severity="secondary" [rounded]="true"
+              aria-label="Deschide meniul" (onClick)="drawerOpen.set(true)" />
+    <span class="company t-heading">{{ companyName() }}</span>
+    <div class="spacer"></div>
+    <span class="user t-body-sm t-muted">{{ email() }}</span>
+    <p-select class="theme" [options]="themes" optionLabel="label" optionValue="value"
+              [ngModel]="theme.choice()" (ngModelChange)="setTheme($event)"
+              ariaLabel="Temă de culori" />
+    <p-button label="Deconectare" icon="pi pi-sign-out" severity="secondary" [outlined]="true"
+              (onClick)="logout()" />
+  </header>
+
+  <aside class="side">
+    <ng-container *ngTemplateOutlet="nav" />
+  </aside>
+
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>
+
+<p-drawer [visible]="drawerOpen()" (visibleChange)="drawerOpen.set($event)" header="Meniu" position="left">
+  <ng-container *ngTemplateOutlet="nav" />
+</p-drawer>
+
+<ng-template #nav>
+  <nav aria-label="Navigare principală">
+    <ul class="menu">
+      <li>
+        <a routerLink="/acasa" routerLinkActive="active" (click)="drawerOpen.set(false)">
+          <i class="pi pi-home" aria-hidden="true"></i><span>Acasă</span>
+        </a>
+      </li>
+      <li *appHasPermission="'EMPLOYEE_READ'">
+        <a routerLink="/angajati" routerLinkActive="active" (click)="drawerOpen.set(false)">
+          <i class="pi pi-users" aria-hidden="true"></i><span>Angajați</span>
+        </a>
+      </li>
+    </ul>
+  </nav>
+</ng-template>

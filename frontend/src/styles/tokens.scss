@@ -1,0 +1,69 @@
+// Tokeni de design (luminos / întunecat). Singura sursă de culori din aplicație.
+@mixin dark-tokens {
+  color-scheme: dark;
+  --surface: #0e0e10;
+  --surface-raised: #1a1a1d;
+  --surface-sunken: #26262a;
+  --ink: #f2f2f4;
+  --ink-muted: #a2a2a8;
+  --border: #34343a;
+  --border-strong: #8c8c93;
+  --brand: #4da3ff;
+  --on-brand: #0e0e10;
+  --brand-tint: #12263f;
+  --brand-ink: #9fd0ff;
+  --success: #4ccd7a;
+  --success-tint: #10301c;
+  --success-ink: #9be3b5;
+  --warning: #f0a02c;
+  --warning-tint: #33230a;
+  --warning-ink: #f7cf8f;
+  --danger: #ff6b63;
+  --danger-tint: #3a1513;
+  --danger-ink: #ffb7b1;
+}
+
+:root {
+  color-scheme: light;
+  --surface: #f3f3f5;
+  --surface-raised: #fbfbfc;
+  --surface-sunken: #e6e6ea;
+  --ink: #1d1d1f;
+  --ink-muted: #66666c;
+  --border: #d6d6db;
+  --border-strong: #85858c;
+  --brand: #0068d1;
+  --on-brand: #fbfbfc;
+  --brand-tint: #e6f0fb;
+  --brand-ink: #0a4f9e;
+  --success: #1f7a3a;
+  --success-tint: #e2f2e7;
+  --success-ink: #145a2a;
+  --warning: #a35200;
+  --warning-tint: #fbefdc;
+  --warning-ink: #6e3700;
+  --danger: #c4161c;
+  --danger-tint: #fbe4e4;
+  --danger-ink: #8f1116;
+
+  // Raze: pastile/butoane, câmpuri, carduri/panouri
+  --radius-pill: 999px;
+  --radius-field: 10px;
+  --radius-card: 18px;
+
+  // Spațiere
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, 'Segoe UI', system-ui, sans-serif;
+  --motion: 160ms;
+}
+
+[data-theme='dark'] {
+  @include dark-tokens;
+}
