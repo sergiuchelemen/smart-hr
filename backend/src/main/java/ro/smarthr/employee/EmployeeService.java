@@ -24,8 +24,10 @@ public class EmployeeService {
 
     @Transactional(readOnly = true)
     public EmployeeController.PageResponse list(int page, int size) {
-        int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
+        // offset-ul (page * size) trebuie să încapă în int; peste ultima pagină reală rezultă lista goală
+        int maxPage = (int) ((Integer.MAX_VALUE / (long) safeSize) - 1);
+        int safePage = Math.min(Math.max(page, 0), maxPage);
         var result = employees.findAll(
             PageRequest.of(safePage, safeSize, Sort.by("lastName", "firstName", "id")));
         List<EmployeeController.EmployeeResponse> items =
