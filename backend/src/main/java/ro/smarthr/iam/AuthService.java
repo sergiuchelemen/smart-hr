@@ -42,8 +42,10 @@ public class AuthService {
             verified = TenantContext.runAs(company.getId(),
                 () -> verifier.verify(Emails.normalize(email), password));
         }
+        if (company == null) {
+            encoder.matches(password, dummyHash); // egalizare de timp: exact un matches pe fiecare drum
+        }
         if (verified == null) {
-            encoder.matches(password, dummyHash); // egalizare de timp
             throw new BadCredentialsException(Messages.BAD_CREDENTIALS);
         }
         return TokenResponse.bearer(
