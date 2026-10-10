@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,10 +29,12 @@ public class RoleController {
     public record UpdatePermissionsRequest(@NotNull @Size(max = 50) List<@NotBlank @Size(max = 64) String> permissions) {
     }
 
-    public record RoleResponse(UUID id, String name, boolean system, List<String> permissions) {
-        static RoleResponse from(Role r) {
-            return new RoleResponse(r.getId(), r.getName(), r.isSystem(), r.getPermissions().stream().sorted().toList());
-        }
+    public record RenameRoleRequest(@NotBlank @Size(max = 100) String name) {
+    }
+
+    /** assignable: privilegiile rolului incluse în ale apelantului; editable: poate fi redenumit/editat/șters de apelant. */
+    public record RoleResponse(UUID id, String name, boolean system, List<String> permissions,
+                               long userCount, boolean assignable, boolean editable) {
     }
 
     private final RoleService service;
@@ -41,7 +44,7 @@ public class RoleController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('PERM_ROLE_MANAGE')")
+    @PreAuthorize("hasAnyAuthority('PERM_ROLE_MANAGE','PERM_USER_READ')")
     public List<RoleResponse> list() {
         return service.list();
     }
@@ -57,5 +60,18 @@ public class RoleController {
     @PreAuthorize("hasAuthority('PERM_ROLE_MANAGE')")
     public RoleResponse updatePermissions(@PathVariable UUID id, @Valid @RequestBody UpdatePermissionsRequest request) {
         return service.updatePermissions(id, request.permissions());
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('PERM_ROLE_MANAGE')")
+    public RoleResponse rename(@PathVariable UUID id, @Valid @RequestBody RenameRoleRequest request) {
+        return service.rename(id, request.name().trim());
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAuthority('PERM_ROLE_MANAGE')")
+    public void delete(@PathVariable UUID id) {
+        service.delete(id);
     }
 }
