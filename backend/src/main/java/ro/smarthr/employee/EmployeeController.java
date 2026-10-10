@@ -1,5 +1,6 @@
 package ro.smarthr.employee;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -54,7 +55,8 @@ public class EmployeeController {
         }
     }
 
-    public record AccountRequest(UUID userId) {
+    /** Cheia userId e obligatorie (poate fi null, pentru dezlegare); lipsa ei => 400. */
+    public record AccountRequest(@JsonProperty(value = "userId", required = true) UUID userId) {
     }
 
     public record ManagerRequest(UUID managerId) {

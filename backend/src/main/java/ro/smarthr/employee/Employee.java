@@ -9,9 +9,11 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.TenantId;
 
 @Entity
+@DynamicUpdate
 @Table(name = "employee")
 public class Employee {
 
@@ -41,10 +43,11 @@ public class Employee {
     @Column(name = "hire_date")
     private LocalDate hireDate;
 
-    @Column(name = "user_id")
+    /** Nemodificabile prin entitate: se scriu doar prin interogările dedicate din EmployeeRepository. */
+    @Column(name = "user_id", updatable = false)
     private UUID userId;
 
-    @Column(name = "manager_id")
+    @Column(name = "manager_id", updatable = false)
     private UUID managerId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -76,16 +79,8 @@ public class Employee {
         return userId;
     }
 
-    public void setUserId(UUID userId) {
-        this.userId = userId;
-    }
-
     public UUID getManagerId() {
         return managerId;
-    }
-
-    public void setManagerId(UUID managerId) {
-        this.managerId = managerId;
     }
 
     public String getFirstName() {

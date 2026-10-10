@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ro.smarthr.common.ApiException;
 import ro.smarthr.common.Emails;
 import ro.smarthr.common.Messages;
+import ro.smarthr.iam.AppUser;
 import ro.smarthr.iam.CurrentUserPrivileges;
 import ro.smarthr.iam.UserRepository;
 import ro.smarthr.platform.CompanyRepository;
@@ -36,28 +37,59 @@ public class EmployeeService {
 
     @Transactional
     public EmployeeController.EmployeeResponse setAccount(UUID id, UUID userId) {
+        // Privilegiile se verifică ÎNAINTE de lock, ca un apelant fără drepturi să nu țină lock-ul companiei.
         CurrentUserPrivileges.Caller caller = currentUser.load();
         requirePermission(caller, "USER_MANAGE");
-        Employee e = find(id);
+        if (userId != null && userId.equals(caller.userId())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, Messages.FORBIDDEN);
+        }
+        lockCompany();
+        find(id);
         requireNotOwnEmployee(caller, id);
+        // Legarea/dezlegarea unui cont transferă drepturi de aprobare: pentru un manager sau pentru un angajat
+        // din lanțul apelantului se cere LEAVE_APPROVE_ALL (ca la schimbarea ierarhiei).
+        if (!caller.permissions().contains("LEAVE_APPROVE_ALL")
+            && (employees.existsByManagerId(id) || isInCallerChain(caller, id))) {
+            throw new ApiException(HttpStatus.FORBIDDEN, Messages.FORBIDDEN);
+        }
         if (userId != null) {
-            users.findById(userId).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, Messages.NOT_FOUND));
+            AppUser user = users.findById(userId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, Messages.NOT_FOUND));
+            if (!user.isEnabled()) {
+                throw new ApiException(HttpStatus.CONFLICT, Messages.USER_DISABLED);
+            }
             if (employees.findByUserId(userId).filter(o -> !o.getId().equals(id)).isPresent()) {
                 throw new ApiException(HttpStatus.CONFLICT, Messages.USER_ALREADY_LINKED);
             }
         }
-        e.setUserId(userId);
-        return EmployeeController.EmployeeResponse.from(employees.saveAndFlush(e));
+        employees.updateUserId(id, userId);
+        return EmployeeController.EmployeeResponse.from(find(id));
+    }
+
+    /** Angajatul țintă se află în lanțul de manageri al angajatului apelantului (sau e chiar el). */
+    private boolean isInCallerChain(CurrentUserPrivileges.Caller caller, UUID targetId) {
+        UUID current = employees.findByUserId(caller.userId()).map(Employee::getId).orElse(null);
+        for (int depth = 0; current != null; depth++) {
+            if (current.equals(targetId) || depth >= MAX_CHAIN_DEPTH) {
+                return true;
+            }
+            current = find(current).getManagerId();
+        }
+        return false;
+    }
+
+    private void lockCompany() {
+        // Lock pe rândul companiei ÎNAINTE de orice citire de angajați: serializează modificările de ierarhie.
+        companies.findByIdForUpdate(CurrentUserPrivileges.companyIdFromToken())
+            .orElseThrow(() -> new ApiException(HttpStatus.FORBIDDEN, Messages.FORBIDDEN));
     }
 
     @Transactional
     public EmployeeController.EmployeeResponse setManager(UUID id, UUID managerId) {
-        // Lock pe rândul companiei ÎNAINTE de orice citire de angajați: serializează modificările de ierarhie.
-        companies.findByIdForUpdate(CurrentUserPrivileges.companyIdFromToken())
-            .orElseThrow(() -> new ApiException(HttpStatus.FORBIDDEN, Messages.FORBIDDEN));
         CurrentUserPrivileges.Caller caller = currentUser.load();
         requirePermission(caller, "LEAVE_APPROVE_ALL");
-        Employee e = find(id);
+        lockCompany();
+        find(id);
         requireNotOwnEmployee(caller, id);
         if (managerId != null) {
             if (managerId.equals(id)) {
@@ -72,8 +104,8 @@ public class EmployeeService {
                 current = find(current).getManagerId();
             }
         }
-        e.setManagerId(managerId);
-        return EmployeeController.EmployeeResponse.from(employees.saveAndFlush(e));
+        employees.updateManagerId(id, managerId);
+        return EmployeeController.EmployeeResponse.from(find(id));
     }
 
     private static void requirePermission(CurrentUserPrivileges.Caller caller, String code) {

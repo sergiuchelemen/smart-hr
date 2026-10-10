@@ -16,6 +16,8 @@ public final class Messages {
 
     public static final String MANAGER_CYCLE = "Managerul ales ar crea o buclă în ierarhie.";
 
+    public static final String USER_DISABLED = "Contul este dezactivat.";
+
     private Messages() {
     }
 }

@@ -3,6 +3,9 @@ package ro.smarthr.employee;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
 
@@ -14,4 +17,14 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
     Optional<Employee> findByUserId(UUID userId);
 
     boolean existsByManagerId(UUID managerId);
+
+    /** Singura cale de scriere a user_id (filtrul de tenant se aplică și interogărilor JPQL de update). */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("update Employee e set e.userId = :userId where e.id = :id")
+    int updateUserId(@Param("id") UUID id, @Param("userId") UUID userId);
+
+    /** Singura cale de scriere a manager_id. */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("update Employee e set e.managerId = :managerId where e.id = :id")
+    int updateManagerId(@Param("id") UUID id, @Param("managerId") UUID managerId);
 }
