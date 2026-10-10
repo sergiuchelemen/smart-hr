@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { LEAVE_STATUS_LABELS, LeaveStatus } from '../../core/leave/leave.service';
+import { TIMESHEET_STATUS_LABELS, TimesheetStatus } from '../../core/timesheet/timesheet.service';
 
 type Shape = 'circle' | 'diamond' | 'square' | 'ring';
 
-export type PillStatus = LeaveStatus | 'ACTIVE' | 'DISABLED';
+export type PillStatus = LeaveStatus | 'ACTIVE' | 'DISABLED' | `TS_${TimesheetStatus}`;
 
 const EXTRA_LABELS = { ACTIVE: 'Activ', DISABLED: 'Dezactivat' } as const;
 
@@ -12,6 +13,10 @@ const FEMININE_LABELS = { ACTIVE: 'Activă', DISABLED: 'Dezactivată' } as const
 const VARIANTS: Record<PillStatus, { tone: string; shape: Shape }> = {
   ACTIVE: { tone: 'success', shape: 'circle' },
   DISABLED: { tone: 'neutral', shape: 'ring' },
+  TS_DRAFT: { tone: 'neutral', shape: 'ring' },
+  TS_SUBMITTED: { tone: 'warning', shape: 'diamond' },
+  TS_APPROVED: { tone: 'success', shape: 'circle' },
+  TS_REJECTED: { tone: 'danger', shape: 'square' },
   APPROVED: { tone: 'success', shape: 'circle' },
   PENDING: { tone: 'warning', shape: 'diamond' },
   REJECTED: { tone: 'danger', shape: 'square' },
@@ -57,7 +62,10 @@ export class StatusPill {
     if (s === 'ACTIVE' || s === 'DISABLED') {
       return this.feminine() ? FEMININE_LABELS[s] : EXTRA_LABELS[s];
     }
-    return LEAVE_STATUS_LABELS[s];
+    if (s.startsWith('TS_')) {
+      return TIMESHEET_STATUS_LABELS[s.slice(3) as TimesheetStatus];
+    }
+    return LEAVE_STATUS_LABELS[s as LeaveStatus];
   });
   protected readonly variant = computed(() => VARIANTS[this.status()]);
 }
