@@ -1,0 +1,7 @@
+.claude/settings.local.json
+.DS_Store
+target/
+node_modules/
+.idea/
+*.iml
+.env
