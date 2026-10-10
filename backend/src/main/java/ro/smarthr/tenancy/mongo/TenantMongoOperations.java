@@ -134,6 +134,12 @@ public class TenantMongoOperations {
             FindAndModifyOptions.options().returnNew(returnNew).upsert(upsert), type);
     }
 
+    /** Actualizare multiplă, mereu limitată la tenantul curent. */
+    public <T extends TenantScoped> long updateMulti(Class<T> type, Criteria criteria, Update update) {
+        checkUpdate(update);
+        return template.updateMulti(new Query(scoped(currentCompanyId(), criteria)), update, type).getModifiedCount();
+    }
+
     public <T extends TenantScoped> T insert(T entity) {
         entity.setCompanyId(currentCompanyId());
         return template.insert(entity);
