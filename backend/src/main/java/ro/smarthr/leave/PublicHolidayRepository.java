@@ -12,4 +12,7 @@ public interface PublicHolidayRepository extends JpaRepository<PublicHoliday, Lo
 
     @Query("select h.holidayDate from PublicHoliday h where h.holidayDate between :from and :to")
     List<LocalDate> findDatesBetween(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    @Query("select h from PublicHoliday h where h.holidayDate >= :from order by h.holidayDate")
+    List<PublicHoliday> findFrom(@Param("from") LocalDate from, org.springframework.data.domain.Pageable pageable);
 }

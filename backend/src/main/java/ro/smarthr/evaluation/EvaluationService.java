@@ -255,6 +255,27 @@ public class EvaluationService {
         return out;
     }
 
+    public record OpenEvaluationInfo(String cycleName, EvaluationStatus status) {
+    }
+
+    /** Pentru tabloul de bord: evaluarea proprie din ciclul deschis, cu starea mascată ca la subiect. */
+    public OpenEvaluationInfo ownOpen(UUID employeeId) {
+        EvaluationCycle cycle = mongo.findOne(EvaluationCycle.class, Criteria.where("status").is(CycleStatus.OPEN));
+        if (cycle == null) {
+            return null;
+        }
+        Evaluation ev = mongo.findOne(Evaluation.class,
+            Criteria.where("cycleId").is(cycle.getId()).and("employeeId").is(employeeId));
+        return ev == null ? null : new OpenEvaluationInfo(cycle.getName(), subjectStatus(ev));
+    }
+
+    /** Pentru tabloul de bord: evaluări ale altora, în așteptarea evaluatorului, nesecurizate. */
+    public long pendingReviews(UUID reviewerEmployeeId) {
+        return mongo.count(Evaluation.class, Criteria.where("reviewerEmployeeId").is(reviewerEmployeeId)
+            .and("employeeId").ne(reviewerEmployeeId).and("status").is(EvaluationStatus.PENDING_MANAGER)
+            .and("locked").ne(true));
+    }
+
     public EvaluationResponse selfReview(String id, ReviewRequest request) {
         Caller caller = currentUser.load();
         require(caller, "EVALUATION_SELF");

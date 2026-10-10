@@ -49,4 +49,6 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
 
     @Query("select e.positionId, count(e) from Employee e where e.positionId is not null group by e.positionId")
     List<Object[]> countPerPosition();
+
+    long countByHireDateGreaterThanEqual(java.time.LocalDate from);
 }
